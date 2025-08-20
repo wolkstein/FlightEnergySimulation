@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - WINDFINDER_API_KEY=${WINDFINDER_API_KEY}
+      - DATABASE_URL=sqlite:///./simulation.db
+    volumes:
+      - ./backend/data:/app/data
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=flight_simulation
+      - POSTGRES_USER=flight_user
+      - POSTGRES_PASSWORD=flight_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

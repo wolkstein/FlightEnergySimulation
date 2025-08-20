@@ -1,0 +1,62 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  height: 400px;
+  width: 100%;
+}
+
+/* Custom styles */
+.simulation-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.waypoint-input {
+  border: 1px solid #d9d9d9;
+  margin-bottom: 10px;
+}
+
+.results-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.energy-chart {
+  margin-top: 20px;
+  height: 300px;
+}
