@@ -51,12 +51,15 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 - **Fallback System:** Realistische Berechnungen ohne externe API
 
 ### 🚁 Fahrzeug-Konfiguration
-- **3 Fahrzeugtypen:** Quadcopter, VTOL, Fixed-Wing Plane
+- **3 Fahrzeugtypen:** Multirotor, VTOL, Fixed-Wing Plane
+- **Frame-Konfiguration:** Tri/Quad/Hexa/Octo mit Single/Coaxial Motor-Setup
+- **VTOL-Modi:** Quad-Plane, Tilt-Rotor, Tilt-Wing, Tail-Sitter
+- **Separater Vortrieb:** VTOL Forward-Thrust Motor unabhängig von Hover-Motoren
 - **Info-Tooltips:** Touchscreen-optimierte ℹ️ Buttons mit Parameterhilfe
 - **Typische Werte:** Realistische Bereiche für alle Parameter:
   - Widerstandsbeiwert: 0.02-0.05 (Standard: 0.03)
   - Masse: 1-10kg je nach Typ
-  - Leistung: Hover-, Cruise- und Max-Power
+  - Leistung: Hover-, Cruise- und Forward-Thrust-Power
   - Batterien: mAh-Bereiche und Spannungen (3S-12S)
 
 ### 📊 Energie-Simulation
@@ -74,15 +77,24 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 
 ### Lokale Entwicklung
 ```bash
-# Docker Setup (Empfohlen)
+# Docker Setup (Empfohlen - Production Build)
 ./build.sh
 
 # Oder manuell
 sudo docker-compose up --build -d
 
-# Development Mode
-cd backend && uvicorn main:app --reload
-cd frontend && npm start
+# Development Mode (mit Tests)
+cd backend 
+pip install -r requirements-dev.txt  # Dev-Dependencies
+uvicorn main:app --reload
+
+cd frontend 
+npm install
+npm start
+
+# Tests ausführen
+cd backend && pytest
+cd frontend && npm test
 ```
 
 ### Wichtige Dateien
@@ -95,7 +107,7 @@ cd frontend && npm start
 ## 🎯 Nächste Entwicklungsziele
 
 ### Kurzfristig (1-2 Wochen)
-- [ ] **GPL 3 Lizenz hinzufügen** - LICENSE Datei + Copyright Headers
+- [x] **GPL 3 Lizenz hinzufügen** - LICENSE Datei + Copyright Headers ✅ 20.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -160,6 +172,9 @@ sudo docker-compose down && sudo docker-compose up --build -d
 
 # Volume Reset (Datenbank zurücksetzen)
 sudo docker-compose down -v
+
+# Dependency-Konflikte lösen
+cd backend && pip install -r requirements-dev.txt --upgrade
 ```
 
 ### Frontend-Debugging

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Form, InputNumber, Row, Col, Typography, Tooltip, Button } from 'antd';
+import { Form, InputNumber, Row, Col, Typography, Tooltip, Button, Select } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { VehicleConfig, VehicleType } from '../types/simulation';
+import { VehicleConfig, VehicleType, FrameType, MotorConfiguration, VTOLConfiguration } from '../types/simulation';
 
 const { Text } = Typography;
+const { Option } = Select;
 
 interface VehicleConfigFormProps {
   config: VehicleConfig;
@@ -18,26 +19,30 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
 }) => {
   const [form] = Form.useForm();
 
-  const handleFieldChange = (field: keyof VehicleConfig, value: number) => {
+  const handleFieldChange = (field: keyof VehicleConfig, value: number | string) => {
     const newConfig = { ...config, [field]: value };
     onChange(newConfig);
   };
 
   // Info-Tooltips für verschiedene Parameter
   const infoTooltips = {
-    mass: "Gesamtmasse des Fahrzeugs inkl. Batterie und Nutzlast. Typisch: Quadcopter 1-5kg, VTOL 2-10kg, Plane 1-8kg",
-    max_power: "Maximale elektrische Leistung aller Motoren zusammen. Typisch: Quadcopter 500-2000W, VTOL 800-3000W, Plane 300-1500W",
-    hover_power: "Leistung zum Schweben (nur für Quadcopter/VTOL). Typisch: 50-70% der Maximaleistung",
+    mass: "Gesamtmasse des Fahrzeugs inkl. Batterie und Nutzlast. Typisch: Multirotor 1-5kg, VTOL 2-10kg, Plane 1-8kg",
+    max_power: "Maximale elektrische Leistung aller Motoren zusammen. Typisch: Multirotor 500-2000W, VTOL 800-3000W, Plane 300-1500W",
+    hover_power: "Leistung zum Schweben (nur für Multirotor/VTOL). Typisch: 50-70% der Maximaleistung",
     cruise_power: "Leistung im Reiseflug (für VTOL/Plane). Typisch: 20-40% der Maximaleistung",
-    max_speed: "Maximale Fluggeschwindigkeit. Typisch: Quadcopter 10-25m/s, VTOL 15-40m/s, Plane 20-50m/s",
+    forward_thrust_power: "Leistung des Vortriebsmotors (nur für VTOL). Separat von Hover-Motoren. Typisch: 300-1200W",
+    cruise_speed: "Normale Reisegeschwindigkeit für optimalen Energieverbrauch. Typisch: Multirotor 8-15m/s, VTOL 12-25m/s, Plane 15-35m/s",
+    max_speed: "Maximale Fluggeschwindigkeit. Typisch: Multirotor 10-25m/s, VTOL 15-40m/s, Plane 20-50m/s",
     max_climb_rate: "Maximale Steiggeschwindigkeit. Typisch: 2-10m/s je nach Fahrzeugtyp und Leistung",
     stall_speed: "Mindestfluggeschwindigkeit (nur für Plane). Geschwindigkeit unter der das Flugzeug abschmiert. Typisch: 8-20m/s",
     battery_capacity: "Batteriekapazität in mAh. Typisch: 5000-22000mAh je nach Fahrzeugklasse",
     battery_voltage: "Nennspannung der Batterie. Typisch: 11.1V (3S), 14.8V (4S), 22.2V (6S), 44.4V (12S)",
-    drag_coefficient: "Widerstandsbeiwert (cD-Wert). Typisch: Quadcopter 0.02-0.05, VTOL 0.03-0.08, Plane 0.02-0.04",
+    drag_coefficient: "Widerstandsbeiwert (cD-Wert). Typisch: Multirotor 0.02-0.05, VTOL 0.03-0.08, Plane 0.02-0.04",
     wing_area: "Flügelfläche in m². Typisch: VTOL 0.3-1.2m², Plane 0.2-0.8m²",
     rotor_diameter: "Durchmesser eines Rotors in Metern. Typisch: 0.2-0.6m je nach Fahrzeuggröße",
-    rotor_count: "Anzahl der Rotoren. Typisch: Quadcopter 4, Hexacopter 6, Octocopter 8",
+    frame_type: "Anzahl der Arme: Tri (3), Quad (4), Hexa (6), Octo (8). Bestimmt Motoranzahl und Redundanz",
+    motor_config: "Single: Ein Motor pro Arm. Coaxial: Zwei gegenläufige Motoren pro Arm für mehr Schub",
+    vtol_config: "VTOL Konfiguration: Quad-Plane (feste Hover-Motoren + Vortrieb), Tilt-Rotor (Motoren kippen)",
     motor_efficiency: "Wirkungsgrad der Motoren (0-1). Typisch: 0.80-0.90 für bürstenlose Motoren",
     propeller_efficiency: "Wirkungsgrad der Propeller (0-1). Typisch: 0.70-0.85 je nach Design und Drehzahl",
     transmission_efficiency: "Wirkungsgrad der Kraftübertragung (0-1). Typisch: 0.90-0.98 für Direktantrieb"
@@ -97,7 +102,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
           </Form.Item>
         </Col>
 
-        {(vehicleType === 'quadcopter' || vehicleType === 'vtol') && (
+        {(vehicleType === 'multirotor' || vehicleType === 'vtol') && (
           <Col xs={24} sm={12}>
             <Form.Item label={createInfoLabel("Schwebelleistung (W)", "hover_power")}>
               <InputNumber
@@ -126,6 +131,34 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
             </Form.Item>
           </Col>
         )}
+
+        {vehicleType === 'vtol' && (
+          <Col xs={24} sm={12}>
+            <Form.Item label={createInfoLabel("Vortriebsleistung (W)", "forward_thrust_power")}>
+              <InputNumber
+                value={config.forward_thrust_power}
+                onChange={(value) => handleFieldChange('forward_thrust_power', value || 0)}
+                min={100}
+                max={1500}
+                step={25}
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        )}
+
+        <Col xs={24} sm={12}>
+          <Form.Item label={createInfoLabel("Reisegeschwindigkeit (m/s)", "cruise_speed")}>
+            <InputNumber
+              value={config.cruise_speed}
+              onChange={(value) => handleFieldChange('cruise_speed', value || 0)}
+              min={3}
+              max={40}
+              step={1}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Col>
 
         <Col xs={24} sm={12}>
           <Form.Item label={createInfoLabel("Max. Geschwindigkeit (m/s)", "max_speed")}>
@@ -223,7 +256,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
           </Col>
         )}
 
-        {(vehicleType === 'quadcopter' || vehicleType === 'vtol') && (
+        {(vehicleType === 'multirotor' || vehicleType === 'vtol') && (
           <>
             <Col xs={24} sm={12}>
               <Form.Item label={createInfoLabel("Rotordurchmesser (m)", "rotor_diameter")}>
@@ -237,17 +270,51 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
                 />
               </Form.Item>
             </Col>
-            {vehicleType === 'quadcopter' && (
+            {(vehicleType === 'multirotor' || vehicleType === 'vtol') && (
+              <>
+                <Col xs={24} sm={12}>
+                  <Form.Item label={createInfoLabel("Frame-Typ", "frame_type")}>
+                    <Select
+                      value={config.frame_type}
+                      onChange={(value) => handleFieldChange('frame_type', value)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="tri">Tri-Copter (3 Arme)</Option>
+                      <Option value="quad">Quad-Copter (4 Arme)</Option>
+                      <Option value="hexa">Hexa-Copter (6 Arme)</Option>
+                      <Option value="octo">Octo-Copter (8 Arme)</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} sm={12}>
+                  <Form.Item label={createInfoLabel("Motor-Konfiguration", "motor_config")}>
+                    <Select
+                      value={config.motor_config}
+                      onChange={(value) => handleFieldChange('motor_config', value)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="single">Single (1 Motor/Arm)</Option>
+                      <Option value="coaxial">Coaxial (2 Motoren/Arm)</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </>
+            )}
+            
+            {vehicleType === 'vtol' && (
               <Col xs={24} sm={12}>
-                <Form.Item label={createInfoLabel("Anzahl Rotoren", "rotor_count")}>
-                  <InputNumber
-                    value={config.rotor_count}
-                    onChange={(value) => handleFieldChange('rotor_count', value || 0)}
-                    min={3}
-                    max={8}
-                    step={1}
+                <Form.Item label={createInfoLabel("VTOL-Konfiguration", "vtol_config")}>
+                  <Select
+                    value={config.vtol_config}
+                    onChange={(value) => handleFieldChange('vtol_config', value)}
                     style={{ width: '100%' }}
-                  />
+                  >
+                    <Option value="quad_plane">Quad-Plane (Hover + Forward)</Option>
+                    <Option value="tilt_rotor">Tilt-Rotor (Motoren kippen)</Option>
+                    <Option value="tilt_wing">Tilt-Wing (Flügel kippen)</Option>
+                    <Option value="tail_sitter">Tail-Sitter (Heck-Starter)</Option>
+                  </Select>
                 </Form.Item>
               </Col>
             )}

@@ -38,7 +38,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [vehicleTypes, setVehicleTypes] = useState<VehicleInfo[]>([]);
-  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('quadcopter');
+  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('multirotor');
   const [vehicleConfig, setVehicleConfig] = useState<VehicleConfig | null>(null);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
     { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München

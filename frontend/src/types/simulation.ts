@@ -20,25 +20,44 @@ export interface WindData {
 }
 
 export interface VehicleConfig {
+  vehicle_type: VehicleType;  // Art des Fahrzeugs
   mass: number;
   max_power: number;
   hover_power?: number;
   cruise_power?: number;
+  forward_thrust_power?: number;  // Neu: VTOL Vortriebsmotor
   stall_speed?: number;
+  cruise_speed: number;  // Normale Fluggeschwindigkeit
   max_speed: number;
   max_climb_rate: number;
   battery_capacity: number;
   battery_voltage: number;
+  
+  // Frame Konfiguration
+  frame_type?: FrameType;
+  motor_config?: MotorConfiguration;
+  vtol_config?: VTOLConfiguration;
+  
+  // Berechnete Werte
+  hover_motors_count?: number;
+  total_motors_count?: number;
+  
+  // Aerodynamik
   drag_coefficient?: number;
   wing_area?: number;
   rotor_diameter?: number;
-  rotor_count?: number;
   motor_efficiency?: number;
   propeller_efficiency?: number;
   transmission_efficiency?: number;
 }
 
-export type VehicleType = 'quadcopter' | 'vtol' | 'plane';
+export type VehicleType = 'multirotor' | 'vtol' | 'plane';
+
+export type FrameType = 'tri' | 'quad' | 'hexa' | 'octo';
+
+export type MotorConfiguration = 'single' | 'coaxial';
+
+export type VTOLConfiguration = 'quad_plane' | 'tilt_rotor' | 'tilt_wing' | 'tail_sitter';
 
 export interface VehicleInfo {
   type: VehicleType;

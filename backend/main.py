@@ -1,3 +1,22 @@
+#!/usr/bin/env python3
+"""
+Flight Energy Simulation - Main FastAPI application
+Copyright (C) 2025 wolkstein
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+"""
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -57,17 +76,23 @@ async def get_vehicles():
     """Verfügbare Fahrzeugtypen abrufen"""
     return [
         {
-            "type": "quadcopter",
-            "name": "Quadcopter",
-            "description": "Multirotor mit 4 Rotoren",
+            "type": "multirotor",
+            "name": "Multirotor",
+            "description": "Multirotor-Fahrzeuge (Tri/Quad/Hexa/Octo)",
             "default_params": {
+                "vehicle_type": "multirotor",
                 "mass": 2.5,  # kg
                 "max_power": 1000,  # W
                 "hover_power": 400,  # W
+                "cruise_speed": 12,  # m/s
                 "max_speed": 15,  # m/s
                 "max_climb_rate": 5,  # m/s
                 "battery_capacity": 5000,  # mAh
                 "battery_voltage": 22.2,  # V
+                "frame_type": "quad",
+                "motor_config": "single",
+                "rotor_diameter": 0.3,  # m
+                "drag_coefficient": 0.03
             }
         },
         {
@@ -75,14 +100,23 @@ async def get_vehicles():
             "name": "VTOL",
             "description": "Vertical Take-Off and Landing",
             "default_params": {
+                "vehicle_type": "vtol",
                 "mass": 5.0,  # kg
                 "max_power": 2000,  # W
                 "hover_power": 800,  # W
                 "cruise_power": 600,  # W
+                "forward_thrust_power": 500,  # W
+                "cruise_speed": 18,  # m/s
                 "max_speed": 25,  # m/s
                 "max_climb_rate": 8,  # m/s
                 "battery_capacity": 10000,  # mAh
                 "battery_voltage": 44.4,  # V
+                "frame_type": "quad",
+                "motor_config": "single", 
+                "vtol_config": "quad_plane",
+                "rotor_diameter": 0.3,  # m
+                "wing_area": 0.5,  # m²
+                "drag_coefficient": 0.05
             }
         },
         {
@@ -90,14 +124,18 @@ async def get_vehicles():
             "name": "Fixed Wing",
             "description": "Starrflügelflugzeug",
             "default_params": {
+                "vehicle_type": "plane",
                 "mass": 3.0,  # kg
                 "max_power": 800,  # W
                 "cruise_power": 300,  # W
                 "stall_speed": 12,  # m/s
+                "cruise_speed": 22,  # m/s
                 "max_speed": 30,  # m/s
                 "max_climb_rate": 10,  # m/s
                 "battery_capacity": 8000,  # mAh
                 "battery_voltage": 22.2,  # V
+                "wing_area": 0.4,  # m²
+                "drag_coefficient": 0.025
             }
         }
     ]
@@ -115,9 +153,11 @@ async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
             wind_data.append(wind)
         
         # Energieberechnung durchführen
-        result = energy_calculator.calculate_energy(
-            vehicle_type=request.vehicle_type,
-            vehicle_config=request.vehicle_config,
+        # Vehicle-Type vom Request ins Config kopieren
+        request.vehicle_config.vehicle_type = request.vehicle_type
+        
+        result = energy_calculator.calculate_energy_consumption(
+            config=request.vehicle_config,
             waypoints=request.waypoints,
             wind_data=wind_data
         )

@@ -114,3 +114,27 @@ Umgebungsvariablen in `.env`:
 WINDFINDER_API_KEY=your_api_key_here
 DATABASE_URL=sqlite:///./simulation.db
 ```
+
+## Lizenz
+
+Dieses Projekt ist unter der **GNU General Public License v3.0** lizenziert.
+
+**Das bedeutet:**
+- ✅ **Freie Nutzung** für private und kommerzielle Zwecke
+- ✅ **Modifikation und Weiterverteilung** erlaubt
+- ✅ **Open Source** - Quellcode muss verfügbar bleiben
+- ❗ **Copyleft** - Ableitungen müssen ebenfalls GPL v3 lizenziert sein
+
+Siehe [LICENSE](LICENSE) Datei für vollständige Details.
+
+## Entwicklung & Beiträge
+
+Beiträge sind willkommen! Bei Verwendung oder Modifikation des Codes beachten Sie bitte:
+
+1. **Copyright Headers**: Alle neuen Dateien müssen GPL v3 Header enthalten
+2. **Lizenz-Kompatibilität**: Externe Dependencies müssen GPL-kompatibel sein
+3. **Attribution**: Original-Autoren in CONTRIBUTORS.md erwähnen
+
+**Copyright (C) 2025 wolkstein**
+
+Weitere Informationen: <https://www.gnu.org/licenses/gpl-3.0.html>
