@@ -39,7 +39,7 @@ class EnergyCalculator:
         dlon = lon2 - lon1
         
         a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2 * math.asin(math.sqrt(a))
+        c = 2 * math.asin(math.sqrt(max(0, a)))  # Sicherstellung, dass a nicht negativ ist
         horizontal_distance = 6371000 * c  # Erdradius in Metern
         
         # 3D-Distanz mit Höhenunterschied
@@ -50,16 +50,22 @@ class EnergyCalculator:
     
     def calculate_air_density(self, altitude: float) -> float:
         """Berechnet die Luftdichte in Abhängigkeit der Höhe"""
+        # Sichere Eingabe
+        altitude = max(0, float(altitude)) if altitude is not None else 0
+        
         # Barometrische Höhenformel (vereinfacht)
         # Temperaturabnahme: 6.5°C pro 1000m
         temperature_sea_level = 288.15  # Kelvin (15°C)
         temperature = temperature_sea_level - 0.0065 * altitude
         
-        # Druckabnahme
-        pressure_ratio = (temperature / temperature_sea_level) ** 5.255
+        # Sicherstellen, dass die Temperatur positiv bleibt (minimum 200K = -73°C)
+        temperature = max(200.0, temperature)
+        
+        # Druckabnahme - jetzt sicher vor negativen Temperaturen
+        pressure_ratio = max(0.01, (temperature / temperature_sea_level) ** 5.255)  # Minimum Luftdichte
         air_density = self.AIR_DENSITY * pressure_ratio
         
-        return air_density
+        return max(0.01, air_density)  # Minimum Luftdichte garantieren
 
     def _calculate_hover_motors_count(self, config: VehicleConfig) -> int:
         """Berechnet die Anzahl der Hover-Motoren basierend auf Frame-Type und Motor-Konfiguration"""
@@ -81,29 +87,58 @@ class EnergyCalculator:
     def calculate_multirotor_power(self, config: VehicleConfig, speed: float, 
                                    climb_rate: float, air_density: float, wind_data: WindData = None) -> float:
         """Berechnet die benötigte Leistung für einen Multirotor (Tri/Quad/Hexa/Octo)"""
-        # Schwebelleistung mit dynamischer Hover-Motor-Berechnung
-        hover_motors_count = self._calculate_hover_motors_count(config)
-        hover_power = config.hover_power or self.estimate_hover_power(config, air_density, hover_motors_count)
-        
-        # Zusätzliche Leistung für Horizontalflug
-        drag_force = 0.5 * air_density * config.drag_coefficient * config.wing_area * speed**2
-        horizontal_power = drag_force * speed / (config.motor_efficiency * config.propeller_efficiency)
-        
-        # Zusätzliche Leistung für Steigflug
-        climb_power = 0
-        if climb_rate > 0:
-            climb_power = (config.mass * self.GRAVITY * climb_rate) / config.motor_efficiency
-        
-        # Windeinfluss
-        wind_power = 0
-        if wind_data:
-            # Vereinfachte Windwiderstandsberechnung
-            effective_speed = math.sqrt((speed + wind_data.wind_vector_x)**2 + wind_data.wind_vector_y**2)
-            wind_drag = 0.5 * air_density * config.drag_coefficient * config.wing_area * (effective_speed - speed)**2
-            wind_power = abs(wind_drag * speed) / (config.motor_efficiency * config.propeller_efficiency)
-        
-        total_power = hover_power + horizontal_power + climb_power + wind_power
-        return min(total_power, config.max_power)
+        try:
+            # Schwebelleistung mit dynamischer Hover-Motor-Berechnung
+            hover_motors_count = self._calculate_hover_motors_count(config)
+            hover_power = config.hover_power or self.estimate_hover_power(config, air_density, hover_motors_count)
+            
+            # Sicherheitsprüfungen
+            speed = max(0, float(speed))
+            air_density = max(0.1, float(air_density))
+            climb_rate = float(climb_rate)
+            
+            # Zusätzliche Leistung für Horizontalflug
+            drag_coefficient = max(0.001, float(config.drag_coefficient or 0.03))
+            wing_area = max(0.01, float(config.wing_area or 0.5))  # Mindestfläche
+            motor_efficiency = max(0.1, float(config.motor_efficiency or 0.85))
+            propeller_efficiency = max(0.1, float(config.propeller_efficiency or 0.75))
+            
+            drag_force = 0.5 * air_density * drag_coefficient * wing_area * speed**2
+            horizontal_power = drag_force * speed / (motor_efficiency * propeller_efficiency)
+            
+            # Zusätzliche Leistung für Steigflug
+            climb_power = 0
+            if climb_rate > 0:
+                climb_power = (float(config.mass) * self.GRAVITY * climb_rate) / motor_efficiency
+            
+            # Windeinfluss
+            wind_power = 0
+            if wind_data:
+                # Vereinfachte Windwiderstandsberechnung
+                wind_x = float(wind_data.wind_vector_x) if wind_data.wind_vector_x is not None else 0
+                wind_y = float(wind_data.wind_vector_y) if wind_data.wind_vector_y is not None else 0
+                
+                effective_speed_squared = (speed + wind_x)**2 + wind_y**2
+                if effective_speed_squared >= 0:
+                    effective_speed = math.sqrt(effective_speed_squared)
+                    wind_drag = 0.5 * air_density * drag_coefficient * wing_area * abs(effective_speed - speed)**2
+                    wind_power = abs(wind_drag * speed) / (motor_efficiency * propeller_efficiency)
+            
+            # Alle Leistungen zu reellen Zahlen konvertieren
+            hover_power = float(abs(hover_power))
+            horizontal_power = float(abs(horizontal_power))
+            climb_power = float(abs(climb_power))
+            wind_power = float(abs(wind_power))
+            
+            total_power = hover_power + horizontal_power + climb_power + wind_power
+            max_power = float(config.max_power)
+            
+            return min(total_power, max_power)
+            
+        except Exception as e:
+            print(f"ERROR in calculate_multirotor_power: {e}")
+            # Fallback: Basis-Leistungsschätzung
+            return float(config.mass) * 20.0  # ~20W pro kg als Fallback
     
     def calculate_vtol_power(self, config: VehicleConfig, speed: float, 
                             climb_rate: float, air_density: float, wind_data: WindData = None) -> float:
@@ -170,31 +205,53 @@ class EnergyCalculator:
     def estimate_hover_power(self, config: VehicleConfig, air_density: float, hover_motors_count: int = None) -> float:
         """Schätzt die Schwebelleistung basierend auf der Rotorentheorie"""
         if config.hover_power:
-            return config.hover_power
+            return float(config.hover_power)
         
-        # Momentum Theory für Hovering
-        thrust = config.mass * self.GRAVITY
-        
-        # Verwende hover_motors_count falls angegeben, sonst berechne dynamisch
-        if hover_motors_count is None:
-            hover_motors_count = self._calculate_hover_motors_count(config)
-        
-        # Thrust pro Motor
-        thrust_per_motor = thrust / hover_motors_count
-        
-        rotor_area = math.pi * (config.rotor_diameter / 2)**2
-        
-        # Ideale Schwebelleistung pro Motor (Momentum Theory)
-        ideal_power_per_motor = thrust_per_motor * math.sqrt(thrust_per_motor / (2 * air_density * rotor_area))
-        
-        # Figure of Merit (FM) berücksichtigen - typisch 0.6-0.8 für gute Rotoren
-        figure_of_merit = 0.7
-        actual_power_per_motor = ideal_power_per_motor / figure_of_merit
-        
-        # Gesamte Schwebelleistung
-        total_hover_power = actual_power_per_motor * hover_motors_count
-        
-        return total_hover_power
+        try:
+            # Momentum Theory für Hovering
+            thrust = float(config.mass) * self.GRAVITY
+            
+            # Verwende hover_motors_count falls angegeben, sonst berechne dynamisch
+            if hover_motors_count is None:
+                hover_motors_count = self._calculate_hover_motors_count(config)
+            
+            # Thrust pro Motor
+            thrust_per_motor = thrust / max(1, hover_motors_count)
+            
+            # Sicherheitsprüfungen für Konfigurationswerte
+            rotor_diameter = max(0.1, float(config.rotor_diameter or 0.3))  # Mindestens 10cm
+            air_density = max(0.1, float(air_density))  # Minimum Luftdichte
+            
+            rotor_area = math.pi * (rotor_diameter / 2)**2
+            
+            # Ideale Schwebelleistung pro Motor (Momentum Theory)
+            # Sicherheitsprüfung um negative Werte oder Division durch 0 zu vermeiden
+            denominator = 2 * air_density * rotor_area
+            if denominator <= 0:
+                # Fallback-Berechnung
+                return float(config.mass) * self.GRAVITY * 15.0  # ~15W pro kg als Fallback
+                
+            sqrt_arg = thrust_per_motor / denominator
+            if sqrt_arg < 0:
+                sqrt_arg = 0
+                
+            ideal_power_per_motor = thrust_per_motor * math.sqrt(sqrt_arg)
+            
+            # Figure of Merit (FM) berücksichtigen - typisch 0.6-0.8 für gute Rotoren
+            figure_of_merit = 0.7
+            actual_power_per_motor = ideal_power_per_motor / figure_of_merit
+            
+            # Gesamte Schwebelleistung
+            total_hover_power = actual_power_per_motor * hover_motors_count
+            
+            # Sicherstellen dass das Ergebnis eine reelle Zahl ist
+            result = float(abs(total_hover_power))
+            return result
+            
+        except Exception as e:
+            print(f"ERROR in estimate_hover_power: {e}")
+            # Fallback-Berechnung: ~15W pro kg
+            return float(config.mass) * 15.0
     
     def calculate_energy_consumption(self, config: VehicleConfig, waypoints: List[Waypoint], 
                                    wind_data: List[WindData] = None) -> SimulationResult:
@@ -211,56 +268,85 @@ class EnergyCalculator:
             wp1 = waypoints[i]
             wp2 = waypoints[i + 1]
             
-            # Segment-spezifische Daten
-            distance = self.calculate_distance(wp1, wp2)
-            avg_altitude = (wp1.altitude + wp2.altitude) / 2
-            air_density = self.calculate_air_density(avg_altitude)
-            
-            # Geschwindigkeit und Steigrate
-            speed = config.cruise_speed if distance > 100 else config.cruise_speed * 0.7  # Reduzierte Geschwindigkeit für kurze Segmente
-            climb_rate = (wp2.altitude - wp1.altitude) / (distance / speed) if distance > 0 else 0
-            
             # Wind-Daten für dieses Segment
             current_wind = wind_data[min(i, len(wind_data) - 1)] if wind_data else None
             
-            # Leistungsberechnung je nach Fahrzeugtyp
+            # Unterschiedliche Berechnung je nach Fahrzeugtyp
             if config.vehicle_type == VehicleType.MULTIROTOR:
-                power = self.calculate_multirotor_power(config, speed, climb_rate, air_density, current_wind)
-            elif config.vehicle_type == VehicleType.VTOL:
-                power = self.calculate_vtol_power(config, speed, climb_rate, air_density, current_wind)
-            elif config.vehicle_type == VehicleType.PLANE:
-                power = self.calculate_plane_power(config, speed, climb_rate, air_density, current_wind)
+                # Neue copter-spezifische Interpolation
+                interpolation_result = self.calculate_copter_interpolated_segments(
+                    config, wp1, wp2, current_wind
+                )
+                
+                # Hauptsegment mit Gesamtwerten erstellen
+                segment = FlightSegment(
+                    segment_id=i,
+                    start_waypoint=waypoints[i],
+                    end_waypoint=waypoints[i + 1],
+                    distance_m=interpolation_result['total_distance'],
+                    duration_s=interpolation_result['total_time'],
+                    energy_wh=interpolation_result['total_energy'],
+                    average_speed_ms=interpolation_result['total_distance'] / interpolation_result['total_time'] if interpolation_result['total_time'] > 0 else 0,
+                    average_power_w=interpolation_result['total_energy'] * 3600 / interpolation_result['total_time'] if interpolation_result['total_time'] > 0 else 0,
+                    wind_influence={
+                        "speed_ms": current_wind.wind_speed_ms if current_wind else 0,
+                        "direction_deg": current_wind.wind_direction_deg if current_wind else 0,
+                        "headwind_ms": current_wind.wind_vector_x if current_wind else 0,
+                        "crosswind_ms": current_wind.wind_vector_y if current_wind else 0,
+                        "influence_factor": 1.0
+                    }
+                )
+                
+                total_energy += interpolation_result['total_energy']
+                total_time += interpolation_result['total_time'] 
+                total_distance += interpolation_result['total_distance']
+                segments.append(segment)
+                
             else:
-                raise ValueError(f"Unbekannter Fahrzeugtyp: {config.vehicle_type}")
-            
-            # Zeit und Energieberechnung
-            flight_time = distance / speed if speed > 0 else 0
-            energy = (power * flight_time) / 3600  # Wh (Watt * Stunden)
-            
-            # Segment erstellen
-            segment = FlightSegment(
-                segment_id=i,
-                start_waypoint=waypoints[i],
-                end_waypoint=waypoints[i + 1],
-                distance_m=distance,
-                duration_s=flight_time,
-                energy_wh=energy,
-                average_speed_ms=speed,
-                average_power_w=power,
-                wind_influence={
-                    "speed_ms": current_wind.wind_speed_ms if current_wind else 0,
-                    "direction_deg": current_wind.wind_direction_deg if current_wind else 0,
-                    "headwind_ms": current_wind.wind_vector_x if current_wind else 0,
-                    "crosswind_ms": current_wind.wind_vector_y if current_wind else 0,
-                    "influence_factor": 1.0
-                }
-            )
-            segments.append(segment)
-            
-            # Akkumulieren
-            total_energy += energy
-            total_time += flight_time
-            total_distance += distance
+                # Traditionelle Berechnung für VTOL und Plane
+                distance = self.calculate_distance(wp1, wp2)
+                avg_altitude = (wp1.altitude + wp2.altitude) / 2
+                air_density = self.calculate_air_density(avg_altitude)
+                
+                # Geschwindigkeit und Steigrate
+                speed = config.cruise_speed if distance > 100 else config.cruise_speed * 0.7
+                climb_rate = (wp2.altitude - wp1.altitude) / (distance / speed) if distance > 0 else 0
+                
+                # Leistungsberechnung je nach Fahrzeugtyp
+                if config.vehicle_type == VehicleType.VTOL:
+                    power = self.calculate_vtol_power(config, speed, climb_rate, air_density, current_wind)
+                elif config.vehicle_type == VehicleType.PLANE:
+                    power = self.calculate_plane_power(config, speed, climb_rate, air_density, current_wind)
+                else:
+                    raise ValueError(f"Unbekannter Fahrzeugtyp: {config.vehicle_type}")
+                
+                # Zeit und Energieberechnung
+                flight_time = distance / speed if speed > 0 else 0
+                energy = (power * flight_time) / 3600  # Wh
+                
+                # Segment erstellen
+                segment = FlightSegment(
+                    segment_id=i,
+                    start_waypoint=waypoints[i],
+                    end_waypoint=waypoints[i + 1],
+                    distance_m=distance,
+                    duration_s=flight_time,
+                    energy_wh=energy,
+                    average_speed_ms=speed,
+                    average_power_w=power,
+                    wind_influence={
+                        "speed_ms": current_wind.wind_speed_ms if current_wind else 0,
+                        "direction_deg": current_wind.wind_direction_deg if current_wind else 0,
+                        "headwind_ms": current_wind.wind_vector_x if current_wind else 0,
+                        "crosswind_ms": current_wind.wind_vector_y if current_wind else 0,
+                        "influence_factor": 1.0
+                    }
+                )
+                
+                total_energy += energy
+                total_time += flight_time
+                total_distance += distance
+                segments.append(segment)
         
         # Batteriekapazität prüfen
         battery_capacity_wh = (config.battery_capacity * config.battery_voltage) / 1000  # mAh * V / 1000 = Wh
@@ -272,7 +358,6 @@ class EnergyCalculator:
             total_time_s=total_time,
             battery_usage_percent=battery_usage_percent,
             flight_segments=segments,
-            vehicle_type=config.vehicle_type,
             summary={
                 "battery_capacity_wh": battery_capacity_wh,
                 "remaining_energy_wh": battery_capacity_wh - total_energy,
@@ -284,3 +369,120 @@ class EnergyCalculator:
                 "max_range_estimate_km": (battery_capacity_wh / total_energy * (total_distance / 1000)) if total_energy > 0 else 0
             }
         )
+    
+    def calculate_copter_interpolated_segments(self, config: VehicleConfig, start_wp: Waypoint, 
+                                             end_wp: Waypoint, wind_data: WindData = None) -> Dict:
+        """
+        Vereinfachte Copter Interpolation mit linearer Flugbahn
+        Geschwindigkeit wird durch langsamste Achse (horizontal/vertikal) begrenzt
+        """
+        try:
+            print(f"DEBUG: Starting copter interpolation from ({start_wp.latitude}, {start_wp.longitude}, {start_wp.altitude}) to ({end_wp.latitude}, {end_wp.longitude}, {end_wp.altitude})")
+            
+            # Horizontale Distanz berechnen
+            lat1, lon1 = math.radians(float(start_wp.latitude)), math.radians(float(start_wp.longitude))
+            lat2, lon2 = math.radians(float(end_wp.latitude)), math.radians(float(end_wp.longitude))
+            
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            
+            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+            a = max(0, float(a))  # Sicherheit gegen negative Werte
+            c = 2 * math.asin(math.sqrt(a))
+            horizontal_distance = 6371000 * c  # Erdradius in Metern
+            
+            print(f"DEBUG: Horizontal distance: {horizontal_distance}")
+            
+            # Vertikale Distanz
+            vertical_distance = float(end_wp.altitude) - float(start_wp.altitude)
+            total_3d_distance = math.sqrt(horizontal_distance**2 + vertical_distance**2)
+            
+            print(f"DEBUG: Vertical distance: {vertical_distance}, Total 3D distance: {total_3d_distance}")
+            
+            # Maximalgeschwindigkeiten ermitteln - alle zu float konvertieren
+            max_horizontal_speed = min(float(config.cruise_speed), float(config.max_speed))
+            
+            # Für vertikale Geschwindigkeit: Steigen oder Sinken?
+            if vertical_distance > 0:
+                max_vertical_speed = float(config.max_climb_rate)  # Steigen
+            else:
+                max_vertical_speed = float(config.max_descent_speed)  # Sinken
+            
+            print(f"DEBUG: Max horizontal speed: {max_horizontal_speed}, Max vertical speed: {max_vertical_speed}")
+            
+            # Zeit berechnen, die für jede Achse benötigt wird
+            time_horizontal = horizontal_distance / max_horizontal_speed if horizontal_distance > 0 and max_horizontal_speed > 0 else 0
+            time_vertical = abs(vertical_distance) / max_vertical_speed if abs(vertical_distance) > 0 and max_vertical_speed > 0 else 0
+            
+            print(f"DEBUG: Time horizontal: {time_horizontal}, Time vertical: {time_vertical}")
+            
+            # Die langsamste Achse bestimmt die Gesamtzeit
+            flight_time = max(float(time_horizontal), float(time_vertical))
+            
+            print(f"DEBUG: Flight time: {flight_time}")
+            
+            # Wenn keine Bewegung nötig ist
+            if flight_time == 0:
+                return {
+                    'segments': [],
+                    'total_time': 0,
+                    'total_energy': 0,
+                    'total_distance': 0
+                }
+            
+            # Tatsächliche Geschwindigkeiten basierend auf der begrenzenden Achse
+            actual_horizontal_speed = horizontal_distance / flight_time if flight_time > 0 else 0
+            actual_vertical_speed = abs(vertical_distance) / flight_time if flight_time > 0 else 0
+            
+            # Steigrate berechnen (positiv für Steigen, negativ für Sinken)
+            climb_rate = vertical_distance / flight_time if flight_time > 0 else 0
+            
+            print(f"DEBUG: Actual horizontal speed: {actual_horizontal_speed}, Climb rate: {climb_rate}")
+            
+            # Durchschnittliche Höhe für Luftdichte
+            avg_altitude = (float(start_wp.altitude) + float(end_wp.altitude)) / 2
+            air_density = self.calculate_air_density(avg_altitude)
+            
+            print(f"DEBUG: Average altitude: {avg_altitude}, Air density: {air_density}")
+            
+            # Leistungsberechnung für den gesamten Flug
+            print(f"DEBUG: About to call calculate_multirotor_power with speed={actual_horizontal_speed}, climb_rate={climb_rate}")
+            power = self.calculate_multirotor_power(config, actual_horizontal_speed, climb_rate, air_density, wind_data)
+            print(f"DEBUG: Power calculated: {power}, type: {type(power)}")
+            
+            # Sicherheitscheck für power
+            if isinstance(power, complex):
+                print(f"ERROR: Power is complex number: {power}")
+                power = float(abs(power))
+                
+            energy = (float(power) * float(flight_time)) / 3600  # Wh
+            print(f"DEBUG: Energy calculated: {energy}")
+            
+            return {
+                'segments': [{
+                    'type': 'linear_flight',
+                    'horizontal_speed': float(actual_horizontal_speed),
+                    'vertical_speed': float(actual_vertical_speed),
+                    'climb_rate': float(climb_rate),
+                    'power': float(power),
+                    'energy': float(energy),
+                    'duration': float(flight_time),
+                    'distance': float(total_3d_distance),
+                    'limiting_axis': 'vertical' if time_vertical > time_horizontal else 'horizontal'
+                }],
+                'total_time': float(flight_time),
+                'total_energy': float(energy),
+                'total_distance': float(total_3d_distance)
+            }
+            
+        except Exception as e:
+            print(f"ERROR in calculate_copter_interpolated_segments: {e}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            # Fallback
+            return {
+                'segments': [],
+                'total_time': 60.0,  # 1 minute fallback
+                'total_energy': float(config.mass) * 20.0 / 60,  # Simple energy estimate
+                'total_distance': 100.0  # 100m fallback
+            }

@@ -30,6 +30,9 @@ export interface VehicleConfig {
   cruise_speed: number;  // Normale Fluggeschwindigkeit
   max_speed: number;
   max_climb_rate: number;
+  max_descent_speed: number;  // Maximale Sinkgeschwindigkeit
+  horizontal_acceleration: number;  // Horizontale Beschleunigung/Verzögerung (m/s²)
+  vertical_acceleration: number;  // Vertikale Beschleunigung beim Steigen/Sinken (m/s²)
   battery_capacity: number;
   battery_voltage: number;
   

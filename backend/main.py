@@ -87,6 +87,9 @@ async def get_vehicles():
                 "cruise_speed": 12,  # m/s
                 "max_speed": 15,  # m/s
                 "max_climb_rate": 5,  # m/s
+                "max_descent_speed": 4,  # m/s
+                "horizontal_acceleration": 4.0,  # m/s²
+                "vertical_acceleration": 3.0,  # m/s²
                 "battery_capacity": 5000,  # mAh
                 "battery_voltage": 22.2,  # V
                 "frame_type": "quad",
@@ -109,6 +112,9 @@ async def get_vehicles():
                 "cruise_speed": 18,  # m/s
                 "max_speed": 25,  # m/s
                 "max_climb_rate": 8,  # m/s
+                "max_descent_speed": 6,  # m/s
+                "horizontal_acceleration": 3.0,  # m/s²
+                "vertical_acceleration": 4.0,  # m/s²
                 "battery_capacity": 10000,  # mAh
                 "battery_voltage": 44.4,  # V
                 "frame_type": "quad",
@@ -132,6 +138,9 @@ async def get_vehicles():
                 "cruise_speed": 22,  # m/s
                 "max_speed": 30,  # m/s
                 "max_climb_rate": 10,  # m/s
+                "max_descent_speed": 8,  # m/s
+                "horizontal_acceleration": 2.0,  # m/s²
+                "vertical_acceleration": 5.0,  # m/s²
                 "battery_capacity": 8000,  # mAh
                 "battery_voltage": 22.2,  # V
                 "wing_area": 0.4,  # m²
@@ -144,6 +153,12 @@ async def get_vehicles():
 async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
     """Energiesimulation durchführen"""
     try:
+        print(f"DEBUG: Request received: {type(request)}")
+        print(f"DEBUG: Has vehicle_config: {hasattr(request, 'vehicle_config')}")
+        if hasattr(request, 'vehicle_config'):
+            print(f"DEBUG: vehicle_config type: {type(request.vehicle_config)}")
+            print(f"DEBUG: Has vehicle_type: {hasattr(request.vehicle_config, 'vehicle_type')}")
+        
         # Wind data für alle Waypoints abrufen
         wind_data = []
         for waypoint in request.waypoints:
@@ -153,9 +168,6 @@ async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
             wind_data.append(wind)
         
         # Energieberechnung durchführen
-        # Vehicle-Type vom Request ins Config kopieren
-        request.vehicle_config.vehicle_type = request.vehicle_type
-        
         result = energy_calculator.calculate_energy_consumption(
             config=request.vehicle_config,
             waypoints=request.waypoints,
@@ -173,6 +185,9 @@ async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
         return result
         
     except Exception as e:
+        import traceback
+        print(f"ERROR in simulation: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/wind/{lat}/{lon}/{alt}")

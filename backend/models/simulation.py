@@ -1,13 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from models.vehicles import VehicleType, VehicleConfig
 from models.waypoint import Waypoint
 
 class SimulationRequest(BaseModel):
-    vehicle_type: VehicleType
     vehicle_config: VehicleConfig
     waypoints: List[Waypoint]
+    weather_conditions: List[Dict] = []
     wind_consideration: bool = True
+    
+    @property
+    def vehicle_type(self) -> VehicleType:
+        """Property für vehicle_type - leitet auf vehicle_config.vehicle_type weiter"""
+        return self.vehicle_config.vehicle_type
     
 class FlightSegment(BaseModel):
     segment_id: int
@@ -27,7 +32,6 @@ class SimulationResult(BaseModel):
     total_time_s: float
     battery_usage_percent: float
     flight_segments: List[FlightSegment]
-    vehicle_type: VehicleType
     summary: Dict[str, Any]
     
     class Config:

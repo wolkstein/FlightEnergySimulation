@@ -13,16 +13,16 @@ class SessionService:
         
         # Simulation Request und Result als JSON serialisieren
         simulation_data = {
-            "request": simulation_request.dict(),
-            "result": simulation_result.dict(),
+            "request": simulation_request.model_dump(),
+            "result": simulation_result.model_dump(),
             "created_at": datetime.now().isoformat()
         }
         
         # Session in Datenbank speichern
         db_session = SimulationSession(
-            name=f"Simulation {simulation_request.vehicle_type} {datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            description=f"Energiesimulation für {simulation_request.vehicle_type} mit {len(simulation_request.waypoints)} Waypoints",
-            vehicle_type=simulation_request.vehicle_type,
+            name=f"Simulation {simulation_request.vehicle_config.vehicle_type} {datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            description=f"Energiesimulation für {simulation_request.vehicle_config.vehicle_type} mit {len(simulation_request.waypoints)} Waypoints",
+            vehicle_type=simulation_request.vehicle_config.vehicle_type,
             total_energy_wh=simulation_result.total_energy_wh,
             total_distance_m=simulation_result.total_distance_m,
             total_time_s=simulation_result.total_time_s,

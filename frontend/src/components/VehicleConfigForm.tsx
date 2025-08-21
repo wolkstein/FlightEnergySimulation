@@ -34,6 +34,9 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
     cruise_speed: "Normale Reisegeschwindigkeit für optimalen Energieverbrauch. Typisch: Multirotor 8-15m/s, VTOL 12-25m/s, Plane 15-35m/s",
     max_speed: "Maximale Fluggeschwindigkeit. Typisch: Multirotor 10-25m/s, VTOL 15-40m/s, Plane 20-50m/s",
     max_climb_rate: "Maximale Steiggeschwindigkeit. Typisch: 2-10m/s je nach Fahrzeugtyp und Leistung",
+    max_descent_speed: "Maximale Sinkgeschwindigkeit (kontrolliert). Typisch: 2-8m/s, meist etwas geringer als Steigrate",
+    horizontal_acceleration: "Horizontale Beschleunigung/Verzögerung. Typisch: Multirotor 2-8m/s², VTOL 1-5m/s², Plane 1-4m/s²",
+    vertical_acceleration: "Vertikale Beschleunigung beim Steigen/Sinken. Typisch: 1-5m/s² je nach Leistungsüberschuss",
     stall_speed: "Mindestfluggeschwindigkeit (nur für Plane). Geschwindigkeit unter der das Flugzeug abschmiert. Typisch: 8-20m/s",
     battery_capacity: "Batteriekapazität in mAh. Typisch: 5000-22000mAh je nach Fahrzeugklasse",
     battery_voltage: "Nennspannung der Batterie. Typisch: 11.1V (3S), 14.8V (4S), 22.2V (6S), 44.4V (12S)",
@@ -180,6 +183,45 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               onChange={(value) => handleFieldChange('max_climb_rate', value || 0)}
               min={1}
               max={20}
+              step={0.5}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} sm={12}>
+          <Form.Item label={createInfoLabel("Max. Sinkrate (m/s)", "max_descent_speed")}>
+            <InputNumber
+              value={config.max_descent_speed}
+              onChange={(value) => handleFieldChange('max_descent_speed', value || 0)}
+              min={1}
+              max={15}
+              step={0.5}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} sm={12}>
+          <Form.Item label={createInfoLabel("Horizontale Beschleunigung (m/s²)", "horizontal_acceleration")}>
+            <InputNumber
+              value={config.horizontal_acceleration}
+              onChange={(value) => handleFieldChange('horizontal_acceleration', value || 0)}
+              min={0.5}
+              max={12}
+              step={0.5}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} sm={12}>
+          <Form.Item label={createInfoLabel("Vertikale Beschleunigung (m/s²)", "vertical_acceleration")}>
+            <InputNumber
+              value={config.vertical_acceleration}
+              onChange={(value) => handleFieldChange('vertical_acceleration', value || 0)}
+              min={0.5}
+              max={10}
               step={0.5}
               style={{ width: '100%' }}
             />

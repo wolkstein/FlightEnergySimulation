@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional, Dict, Any
 from enum import Enum
 
@@ -37,6 +37,9 @@ class VehicleConfig(BaseModel):
     cruise_speed: float  # m/s (normale Fluggeschwindigkeit)
     max_speed: float  # m/s
     max_climb_rate: float  # m/s
+    max_descent_speed: float  # m/s (maximale Sinkgeschwindigkeit)
+    horizontal_acceleration: float  # m/s² (horizontale Beschleunigung/Verzögerung)
+    vertical_acceleration: float  # m/s² (vertikale Beschleunigung beim Steigen/Sinken)
     battery_capacity: float  # mAh
     battery_voltage: float  # V
     
@@ -59,7 +62,8 @@ class VehicleConfig(BaseModel):
     propeller_efficiency: Optional[float] = 0.75
     transmission_efficiency: Optional[float] = 0.95
 
-    def model_post_init(self, __context) -> None:
+    @model_validator(mode='after')
+    def calculate_motor_counts(self):
         """Berechne Motor-Anzahl basierend auf Frame und Configuration"""
         if self.frame_type and self.motor_config:
             # Basis Motor-Anzahl pro Frame
@@ -82,3 +86,5 @@ class VehicleConfig(BaseModel):
             if self.vtol_config:
                 if self.vtol_config in [VTOLConfiguration.QUAD_PLANE]:
                     self.total_motors_count += 1  # Ein Vortriebsmotor
+        
+        return self
