@@ -40,7 +40,7 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 - **Auto-Centering:** Automatisches Zoomen auf alle Waypoints
 - **Touch-optimiert:** Mobile-friendly Bedienung
 
-### 🌪️ Wind-Visualisierung
+### 🌪️ Wind-Visualisierung & Manual Override
 - **Colored Wind Arrows:** Geschwindigkeits-basierte Farbkodierung
   - Grün: 0-5 m/s (schwach)
   - Gelb: 5-10 m/s (mäßig)  
@@ -48,6 +48,10 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
   - Rot: >15 m/s (sehr stark)
 - **Route-basiert:** Wind-Daten entlang der geplanten Route
 - **Zeit-abhängig:** Mission-Startzeit und Flugdauer berücksichtigt
+- **Manual Wind Override:** Manuelle Windeinstellung für Feldtests
+  - Geschwindigkeit: 0-50 m/s einstellbar
+  - Richtung: 0-359° (meteorologische Konvention)
+  - Ideal für Validierung mit echten Wetterbedingungen
 - **Fallback System:** Realistische Berechnungen ohne externe API
 
 ### 🚁 Fahrzeug-Konfiguration
@@ -62,11 +66,20 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
   - Leistung: Hover-, Cruise- und Forward-Thrust-Power
   - Batterien: mAh-Bereiche und Spannungen (3S-12S)
 
-### 📊 Energie-Simulation
+### 📊 Energie-Simulation & Aerodynamik
 - **Physics-based:** Realistische aerodynamische Berechnungen
-- **Wind Impact:** Gegen-/Rückenwind-Berücksichtigung
+- **Advanced Wind Impact:** Präzise Gegen-/Rückenwind-Berücksichtigung
+  - Windvektor-Projektion relativ zur Flugrichtung
+  - Separate Headwind/Crosswind Berechnung
+  - Korrekte aerodynamische Windeinflüsse
+- **Multirotor Sweet Spot Model:** Realistische Effizienz-Kurven
+  - Massenabhängige Sweet Spot Bereiche (3-8 m/s für typische Copter)
+  - Airspeed-basierte Berechnung (nicht Ground Speed)
+  - ~40% Effizienzgewinn im optimalen Geschwindigkeitsbereich
+  - Geschwindigkeitsabhängige Drag-Koeffizienten
 - **Battery Modeling:** Spannungsabfall und Kapazitäts-Modellierung
 - **Multi-Phase:** Takeoff, Cruise, Landing phases
+- **Realistische Leistungswerte:** ~160-180W/kg bei optimalem Flug
 
 ### 📁 Mission Import
 - **QGroundControl Support:** .plan Datei Import
@@ -108,6 +121,9 @@ cd frontend && npm test
 
 ### Kurzfristig (1-2 Wochen)
 - [x] **GPL 3 Lizenz hinzufügen** - LICENSE Datei + Copyright Headers ✅ 20.08.2025
+- [x] **Airspeed-based Sweet Spot Model** - Realistische Multirotor-Aerodynamik ✅ 21.08.2025
+- [x] **Manual Wind Override** - Manuelle Windeinstellung für Feldtests ✅ 21.08.2025
+- [x] **Wind Direction Fix** - Korrekte Headwind/Crosswind Projektion ✅ 21.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -160,6 +176,36 @@ cd frontend && npm test
 - **Contra:** Overhead für kleine Deployments
 - **Alternative:** SQLite für Single-User
 
+### Aerodynamisches Modell - Sweet Spot Implementierung (August 2025)
+
+#### Problem der Ground Speed vs. Airspeed
+Ursprünglich basierte die Effizienzberechnung auf Ground Speed (Geschwindigkeit über Grund), was bei Wind zu unrealistischen Ergebnissen führte:
+- Bei Rückenwind: Hohe Ground Speed suggerierte schlechte Effizienz
+- Bei Gegenwind: Niedrige Ground Speed suggerierte gute Effizienz
+- **Realität:** Aerodynamische Effizienz hängt von Airspeed (Geschwindigkeit relativ zur Luft) ab!
+
+#### Lösung: Airspeed-basierte Berechnung
+```python
+# Wind-Projektion auf Flugrichtung
+headwind_component = -(wind_x * flight_direction_x + wind_y * flight_direction_y)
+airspeed = max(0.1, ground_speed - headwind_component)
+
+# Sweet Spot basiert auf Airspeed
+efficiency_factor = calculate_speed_efficiency_factor(airspeed, config)
+```
+
+#### Sweet Spot Charakteristiken
+- **Massenabhängig:** Schwerere Copter haben höhere optimale Geschwindigkeiten
+  - 15kg Copter: Sweet Spot 4.5-7.5 m/s Airspeed
+  - 5kg Copter: Sweet Spot 1.5-2.5 m/s Airspeed
+- **Effizienzgewinn:** Bis zu 40% weniger Energieverbrauch im Sweet Spot
+- **Realistische Werte:** ~160-180W/kg bei optimaler Airspeed
+
+#### Validierung
+- **Test-Szenario:** 12 m/s Ground Speed + 4 m/s Tailwind = 8.58 m/s Airspeed
+- **Ergebnis:** 2488W für 15kg Copter (~166W/kg) - realistische Werte ✅
+- **Wind-Komponenten:** Headwind -3.42 m/s, Crosswind 2.08 m/s bei 31.3° Flugrichtung ✅
+
 ## 🔧 Debugging & Troubleshooting
 
 ### Container-Probleme
@@ -193,8 +239,9 @@ cd backend && pip install -r requirements-dev.txt --upgrade
 ```
 Projekt: Flight Energy Simulation (React/FastAPI/Docker)
 GitHub: https://github.com/wolkstein/FlightEnergySimulation
-Status: Funktionsfähig mit Windvektor-Visualisierung
-Aktuell: Info-Tooltips für alle Parameter implementiert
+Status: Funktionsfähig mit realistischer Multirotor-Aerodynamik
+Aktuell: Airspeed-basierte Sweet Spot Berechnung implementiert (Aug 2025)
+Features: Manual Wind Override, korrekte Wind-Projektion, massenabhängige Effizienz
 Nächstes: [siehe Development Goals]
 ```
 
@@ -203,10 +250,11 @@ Nächstes: [siehe Development Goals]
 - `README.md` - Feature-Überblick  
 - `QUICKSTART.md` - Installation & Setup
 - `frontend/src/components/` - UI-Komponenten
-- `backend/services/` - Business Logic
+- `backend/services/energy_calculator.py` - Aerodynamik-Engine mit Sweet Spot Model
+- `backend/services/wind_service.py` - Wind-Datenquellen
 
 ---
 
-**Letzte Aktualisierung:** 20. August 2025  
+**Letzte Aktualisierung:** 21. August 2025  
 **Entwickler:** wolkstein  
-**Version:** 1.0 - Initial Release mit Wind-Visualisierung
+**Version:** 1.1 - Airspeed-basierte Sweet Spot Aerodynamik + Manual Wind Override

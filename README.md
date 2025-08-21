@@ -4,11 +4,16 @@ Eine Webanwendung zur Simulation des Energieverbrauchs von PX4-Fahrzeugen (Quadc
 
 ## Features
 
-- **Fahrzeugtypen**: Quadcopter, VTOL, Plane
+- **Fahrzeugtypen**: Quadcopter, VTOL, Plane mit realistischen Parametern
+- **Aerodynamik-Engine**: Physics-based mit airspeed-basiertem Sweet Spot Model
+  - Massenabhängige Effizienz-Kurven für Multirotor (bis zu 40% Energieeinsparung)
+  - Korrekte Wind-Projektion (Headwind/Crosswind) relativ zur Flugrichtung
+  - Realistische Leistungswerte (~160-180W/kg bei optimaler Geschwindigkeit)
 - **Energieberechnung**: Physikalische Simulation des Energieverbrauchs in Wh
 - **Wegpunktplanung**: WGS84 XYZ Koordinateneingabe mit interaktiver Karte
+- **Manual Wind Override**: Manuelle Windeinstellung für Feldtests und Validierung
 - **Mission Import/Export**: QGroundControl (.plan) und MissionPlanner (.waypoints) Dateien
-- **Windintegration**: Windfinder API für positionsbasierte Winddaten
+- **Windintegration**: Windfinder API für positionsbasierte Winddaten mit Fallback-System
 - **Web-GUI**: Browser-basierte Benutzeroberfläche mit Ant Design
 - **Docker**: Containerisierte Bereitstellung
 
@@ -54,6 +59,16 @@ Test-Dateien verfügbar: `./test_mission_import.sh`
 
 ## Windanalyse & Visualisierung 🌬️
 
+### Advanced Wind Features (August 2025):
+- **Manual Wind Override**: Manuelle Windeinstellung für Feldtests und Validierung
+  - Geschwindigkeit: 0-50 m/s einstellbar
+  - Richtung: 0-359° (meteorologische Konvention)  
+  - Ideal für Vergleich mit echten Wetterbedingungen
+- **Airspeed-based Calculations**: Realistische Aerodynamik basierend auf Luftgeschwindigkeit
+  - Korrekte Unterscheidung zwischen Ground Speed und Airspeed
+  - Präzise Headwind/Crosswind-Projektion auf Flugrichtung
+  - Sweet Spot Effizienz abhängig von tatsächlicher Airspeed
+
 ### Zeitbasierte Windvorhersagen:
 - **Aktuelle Winddaten**: Sofortige Windverhältnisse für jeden Wegpunkt
 - **Zeitgenaue Vorhersagen**: Windprognose für spezifische Missionszeitpunkte
@@ -62,11 +77,11 @@ Test-Dateien verfügbar: `./test_mission_import.sh`
 
 ### Windvektor-Visualisierung:
 - **Interaktive Karte**: Windvektoren als Pfeile direkt in der Route dargestellt
-- **Farbkodierung**: 
-  - 🟢 Grün: Schwacher Wind (< 3 m/s)
-  - 🟡 Gelb: Mäßiger Wind (3-7 m/s)
-  - 🟠 Orange: Starker Wind (7-12 m/s)
-  - 🔴 Rot: Sehr starker Wind (> 12 m/s)
+- **Erweiterte Farbkodierung**: 
+  - 🟢 Grün: Schwacher Wind (0-5 m/s)
+  - 🟡 Gelb: Mäßiger Wind (5-10 m/s)
+  - 🟠 Orange: Starker Wind (10-15 m/s)
+  - 🔴 Rot: Sehr starker Wind (>15 m/s)
 - **Detailinfos**: Popup mit Windgeschwindigkeit, Richtung, Zeit und Position
 - **Routing-Integration**: Windvektoren werden für jeden Wegpunkt zeitgenau berechnet
 
