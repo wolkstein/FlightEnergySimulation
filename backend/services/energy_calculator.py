@@ -85,44 +85,56 @@ class EnergyCalculator:
         return base_count
 
     def calculate_multirotor_power(self, config: VehicleConfig, speed: float, 
-                                   climb_rate: float, air_density: float, wind_data: WindData = None) -> float:
-        """Berechnet die benötigte Leistung für einen Multirotor (Tri/Quad/Hexa/Octo)"""
+                                   climb_rate: float, air_density: float, wind_data: WindData = None, airspeed: float = None) -> float:
+        """Berechnet die benötigte Leistung für einen Multirotor mit realistischem Sweet Spot"""
         try:
-            # Schwebelleistung mit dynamischer Hover-Motor-Berechnung
-            hover_motors_count = self._calculate_hover_motors_count(config)
-            hover_power = config.hover_power or self.estimate_hover_power(config, air_density, hover_motors_count)
-            
             # Sicherheitsprüfungen
-            speed = max(0, float(speed))
+            speed = max(0, float(speed))  # Ground speed
             air_density = max(0.1, float(air_density))
             climb_rate = float(climb_rate)
             
-            # Zusätzliche Leistung für Horizontalflug
-            drag_coefficient = max(0.001, float(config.drag_coefficient or 0.03))
-            wing_area = max(0.01, float(config.wing_area or 0.5))  # Mindestfläche
+            # Airspeed verwenden falls übergeben, sonst aus Ground Speed und Wind berechnen
+            if airspeed is not None:
+                effective_airspeed = max(0.1, float(airspeed))
+            else:
+                # Airspeed berechnen - das ist aerodynamisch relevant!
+                effective_airspeed = speed  # Default: keine Windkorrektur
+                if wind_data:
+                    # Vereinfachte Windkorrektur: Projektion des Windvektors auf Flugrichtung
+                    wind_x = float(wind_data.wind_vector_x) if wind_data.wind_vector_x is not None else 0
+                    wind_y = float(wind_data.wind_vector_y) if wind_data.wind_vector_y is not None else 0
+                    
+                    # Annahme: Copter fliegt in X-Richtung (vereinfacht, wird von copter_interpolated_segments korrigiert)
+                    headwind_component = -wind_x  # Negative X = Gegenwind
+                    effective_airspeed = max(0.1, speed - headwind_component)
+            
+            # Basis Schwebelleistung
+            hover_motors_count = self._calculate_hover_motors_count(config)
+            base_hover_power = config.hover_power or self.estimate_hover_power(config, air_density, hover_motors_count)
+            
+            # Geschwindigkeitsabhängige Effizienz basierend auf AIRSPEED (nicht Ground Speed!)
+            speed_efficiency_factor = self._calculate_speed_efficiency_factor(effective_airspeed, config)
+            
+            # Effektive Hover-Leistung basierend auf Airspeed
+            hover_power = base_hover_power * speed_efficiency_factor
+            
+            # Drag-Berechnung mit geschwindigkeitsabhängigem Widerstandsbeiwert (auch Airspeed!)
+            drag_coefficient = self._calculate_dynamic_drag_coefficient(effective_airspeed, config)
+            wing_area = max(0.01, float(config.wing_area or 0.5))
             motor_efficiency = max(0.1, float(config.motor_efficiency or 0.85))
             propeller_efficiency = max(0.1, float(config.propeller_efficiency or 0.75))
             
-            drag_force = 0.5 * air_density * drag_coefficient * wing_area * speed**2
-            horizontal_power = drag_force * speed / (motor_efficiency * propeller_efficiency)
+            # Drag Force basierend auf Airspeed
+            drag_force = 0.5 * air_density * drag_coefficient * wing_area * effective_airspeed**2
+            horizontal_power = drag_force * effective_airspeed / (motor_efficiency * propeller_efficiency)
             
-            # Zusätzliche Leistung für Steigflug
+            # Steigflug-Leistung
             climb_power = 0
             if climb_rate > 0:
                 climb_power = (float(config.mass) * self.GRAVITY * climb_rate) / motor_efficiency
             
-            # Windeinfluss
-            wind_power = 0
-            if wind_data:
-                # Vereinfachte Windwiderstandsberechnung
-                wind_x = float(wind_data.wind_vector_x) if wind_data.wind_vector_x is not None else 0
-                wind_y = float(wind_data.wind_vector_y) if wind_data.wind_vector_y is not None else 0
-                
-                effective_speed_squared = (speed + wind_x)**2 + wind_y**2
-                if effective_speed_squared >= 0:
-                    effective_speed = math.sqrt(effective_speed_squared)
-                    wind_drag = 0.5 * air_density * drag_coefficient * wing_area * abs(effective_speed - speed)**2
-                    wind_power = abs(wind_drag * speed) / (motor_efficiency * propeller_efficiency)
+            # Windeinfluss mit realistischerem Modell (basierend auf Ground Speed für Kontrolldynamik)
+            wind_power = self._calculate_wind_power_impact(speed, wind_data, air_density, drag_coefficient, wing_area, motor_efficiency, propeller_efficiency)
             
             # Alle Leistungen zu reellen Zahlen konvertieren
             hover_power = float(abs(hover_power))
@@ -252,6 +264,109 @@ class EnergyCalculator:
             print(f"ERROR in estimate_hover_power: {e}")
             # Fallback-Berechnung: ~15W pro kg
             return float(config.mass) * 15.0
+    
+    def _calculate_speed_efficiency_factor(self, speed: float, config: VehicleConfig) -> float:
+        """
+        Berechnet den geschwindigkeitsabhängigen Effizienzfaktor für Multikopter
+        Berücksichtigt den Sweet Spot bei mittleren Geschwindigkeiten
+        """
+        try:
+            # Sweet Spot Geschwindigkeiten (abhängig von Copter-Größe/Gewicht)
+            # Leichtere Copter haben niedrigeren Sweet Spot, schwerere höheren
+            mass = float(config.mass)
+            
+            # Sweet Spot zwischen 3-8 m/s für typische Copter
+            sweet_spot_min = max(2.0, mass * 0.3)  # ~3-5 m/s für 10-15kg Copter
+            sweet_spot_max = max(4.0, mass * 0.5)  # ~5-8 m/s für 10-15kg Copter
+            sweet_spot_center = (sweet_spot_min + sweet_spot_max) / 2
+            
+            if speed == 0:
+                # Hovern: 100% Hover-Power nötig
+                return 1.0
+            elif speed <= sweet_spot_min:
+                # Langsamer Vorwärtsflug: Leichte Verbesserung
+                # Linear von 100% zu 75%
+                return 1.0 - (speed / sweet_spot_min) * 0.25
+            elif speed <= sweet_spot_max:
+                # Sweet Spot: Maximale Effizienz (60-75% der Hover-Power)
+                # Parabolische Kurve mit Minimum bei sweet_spot_center
+                normalized_pos = (speed - sweet_spot_center) / (sweet_spot_max - sweet_spot_center)
+                efficiency_gain = 0.35 * (1 - normalized_pos**2)  # Max 35% Einsparung
+                return 0.75 - efficiency_gain
+            else:
+                # Schneller Flug: Effizienz nimmt ab durch hohen Anstellwinkel
+                # Exponentieller Anstieg des Energiebedarfs
+                excess_speed = speed - sweet_spot_max
+                penalty = min(0.4, excess_speed * 0.03)  # Max 40% Penalty
+                return 0.75 + penalty
+                
+        except Exception as e:
+            print(f"ERROR in _calculate_speed_efficiency_factor: {e}")
+            return 1.0  # Fallback zu konservativer Schätzung
+    
+    def _calculate_dynamic_drag_coefficient(self, speed: float, config: VehicleConfig) -> float:
+        """
+        Berechnet geschwindigkeitsabhängigen Widerstandsbeiwert
+        Bei höheren Geschwindigkeiten nimmt Cd durch Anstellwinkel zu
+        """
+        try:
+            base_cd = float(config.drag_coefficient or 0.03)
+            
+            if speed <= 3.0:
+                # Niedrige Geschwindigkeiten: Basis Cd
+                return base_cd
+            elif speed <= 8.0:
+                # Sweet Spot Bereich: Optimaler Cd
+                return base_cd * 0.9  # 10% besser durch optimalen Flugwinkel
+            else:
+                # Hohe Geschwindigkeiten: Cd steigt durch hohen Anstellwinkel
+                speed_factor = (speed - 8.0) * 0.15  # 15% pro m/s über 8 m/s
+                return base_cd * (1.0 + speed_factor)
+                
+        except Exception as e:
+            print(f"ERROR in _calculate_dynamic_drag_coefficient: {e}")
+            return float(config.drag_coefficient or 0.03)
+    
+    def _calculate_wind_power_impact(self, speed: float, wind_data: WindData, 
+                                   air_density: float, drag_coefficient: float, wing_area: float,
+                                   motor_efficiency: float, propeller_efficiency: float) -> float:
+        """
+        Realistischere Windwiderstandsberechnung für Multikopter
+        """
+        if not wind_data:
+            return 0.0
+            
+        try:
+            wind_x = float(wind_data.wind_vector_x) if wind_data.wind_vector_x is not None else 0
+            wind_y = float(wind_data.wind_vector_y) if wind_data.wind_vector_y is not None else 0
+            
+            # Gesamter Windvektor
+            wind_speed = math.sqrt(wind_x**2 + wind_y**2)
+            
+            if wind_speed < 0.1 or speed < 0.1:
+                return 0.0
+                
+            # Relative Geschwindigkeit zum Wind
+            # Vereinfacht: Nehmen wir an, der Copter fliegt in x-Richtung
+            relative_speed = math.sqrt((speed + wind_x)**2 + wind_y**2)
+            
+            # Zusätzlicher Drag durch Wind
+            base_drag = 0.5 * air_density * drag_coefficient * wing_area * speed**2
+            wind_drag = 0.5 * air_density * drag_coefficient * wing_area * relative_speed**2
+            
+            # Differenz als Windeinfluss
+            wind_drag_diff = abs(wind_drag - base_drag)
+            
+            # Power für zusätzlichen Widerstand
+            wind_power = wind_drag_diff * speed / (motor_efficiency * propeller_efficiency)
+            
+            # Begrenzen auf realistische Werte (max 50% zusätzliche Power)
+            max_wind_power = base_drag * speed / (motor_efficiency * propeller_efficiency) * 0.5
+            return min(wind_power, max_wind_power)
+            
+        except Exception as e:
+            print(f"ERROR in _calculate_wind_power_impact: {e}")
+            return 0.0
     
     def calculate_energy_consumption(self, config: VehicleConfig, waypoints: List[Waypoint], 
                                    wind_data: List[WindData] = None) -> SimulationResult:
@@ -445,9 +560,43 @@ class EnergyCalculator:
             
             print(f"DEBUG: Average altitude: {avg_altitude}, Air density: {air_density}")
             
-            # Leistungsberechnung für den gesamten Flug
+            # Leistungsberechnung für den gesamten Flug mit korrigierter Airspeed
             print(f"DEBUG: About to call calculate_multirotor_power with speed={actual_horizontal_speed}, climb_rate={climb_rate}, air_density={air_density}, wind_data={wind_data}")
-            power = self.calculate_multirotor_power(config, actual_horizontal_speed, climb_rate, air_density, wind_data)
+            
+            # Für realistische Airspeed-Berechnung brauchen wir die Flugrichtung
+            if wind_data:
+                # Flugrichtung berechnen (gleich wie in _calculate_wind_components_relative_to_flight)
+                lat1, lon1 = math.radians(float(start_wp.latitude)), math.radians(float(start_wp.longitude))
+                lat2, lon2 = math.radians(float(end_wp.latitude)), math.radians(float(end_wp.longitude))
+                dlon = lon2 - lon1
+                
+                flight_bearing_rad = math.atan2(
+                    math.sin(dlon) * math.cos(lat2),
+                    math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+                )
+                flight_bearing_deg = (math.degrees(flight_bearing_rad) + 360) % 360
+                
+                # Windvektor auf Flugrichtung projizieren
+                flight_direction_x = math.sin(math.radians(flight_bearing_deg))
+                flight_direction_y = math.cos(math.radians(flight_bearing_deg))
+                
+                wind_x = float(wind_data.wind_vector_x) if wind_data.wind_vector_x is not None else 0
+                wind_y = float(wind_data.wind_vector_y) if wind_data.wind_vector_y is not None else 0
+                
+                # Gegenwind-Komponente (negativ = Gegenwind reduziert Airspeed)
+                headwind_component = -(wind_x * flight_direction_x + wind_y * flight_direction_y)
+                
+                # Airspeed = Ground Speed - Headwind (bei Gegenwind wird Airspeed kleiner)
+                airspeed = max(0.1, actual_horizontal_speed - headwind_component)
+                print(f"DEBUG: Ground speed: {actual_horizontal_speed}, Headwind: {headwind_component}, Airspeed: {airspeed}")
+                
+                # Windkorrigierte Daten für Power-Berechnung erstellen
+                wind_data_corrected = wind_data
+            else:
+                airspeed = actual_horizontal_speed
+                wind_data_corrected = None
+                
+            power = self.calculate_multirotor_power(config, airspeed, climb_rate, air_density, wind_data_corrected)
             print(f"DEBUG: Power calculated: {power}, type: {type(power)}")
             
             # Sicherheitscheck für power
