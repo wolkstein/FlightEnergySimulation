@@ -74,6 +74,10 @@ export interface SimulationRequest {
   vehicle_config: VehicleConfig;
   waypoints: Waypoint[];
   wind_consideration: boolean;
+  // Manuelle Wind-Override für Feldtests
+  manual_wind_enabled?: boolean;
+  manual_wind_speed_ms?: number;
+  manual_wind_direction_deg?: number;
 }
 
 export interface FlightSegment {

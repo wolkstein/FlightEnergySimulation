@@ -8,6 +8,10 @@ class SimulationRequest(BaseModel):
     waypoints: List[Waypoint]
     weather_conditions: List[Dict] = []
     wind_consideration: bool = True
+    # Manuelle Wind-Override für Feldtests
+    manual_wind_enabled: bool = False
+    manual_wind_speed_ms: Optional[float] = Field(None, ge=0, le=50, description="Manuelle Windgeschwindigkeit in m/s (0-50)")
+    manual_wind_direction_deg: Optional[float] = Field(None, ge=0, lt=360, description="Manuelle Windrichtung in Grad (0-359)")
     
     @property
     def vehicle_type(self) -> VehicleType:

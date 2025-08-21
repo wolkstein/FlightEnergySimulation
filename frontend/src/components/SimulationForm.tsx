@@ -49,6 +49,10 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const [showWindVectors, setShowWindVectors] = useState(false);
   const [missionStartTime, setMissionStartTime] = useState<string>('');
   const [flightDuration, setFlightDuration] = useState<number>(1.0);
+  // Manueller Wind für Feldtests
+  const [manualWindEnabled, setManualWindEnabled] = useState(false);
+  const [manualWindSpeed, setManualWindSpeed] = useState<number>(5.0);
+  const [manualWindDirection, setManualWindDirection] = useState<number>(270);
 
   useEffect(() => {
     loadVehicleTypes();
@@ -149,6 +153,9 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
         vehicle_config: vehicleConfig,
         waypoints,
         wind_consideration: windConsideration,
+        manual_wind_enabled: manualWindEnabled,
+        manual_wind_speed_ms: manualWindEnabled ? manualWindSpeed : undefined,
+        manual_wind_direction_deg: manualWindEnabled ? manualWindDirection : undefined,
       };
 
       const result = await apiService.runSimulation(request);
@@ -216,35 +223,85 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                       unCheckedChildren="Aus"
                     />
                   </Space>
-                  
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Text>Missionsstart:</Text>
-                      <br />
-                      <InputNumber
-                        style={{ width: '100%' }}
-                        placeholder="Stunden von jetzt"
-                        min={0}
-                        max={168} // 1 Woche
-                        value={missionStartTime ? parseFloat(missionStartTime) : 0}
-                        onChange={(value) => setMissionStartTime(value?.toString() || '0')}
-                        addonAfter="h"
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <Text>Flugdauer (Schätzung):</Text>
-                      <br />
-                      <InputNumber
-                        style={{ width: '100%' }}
-                        min={0.1}
-                        max={24}
-                        step={0.1}
-                        value={flightDuration}
-                        onChange={(value) => setFlightDuration(value || 1.0)}
-                        addonAfter="h"
-                      />
-                    </Col>
-                  </Row>
+
+                  <Space>
+                    <Text>Manueller Wind (Feldtests):</Text>
+                    <Switch
+                      checked={manualWindEnabled}
+                      onChange={(checked) => {
+                        setManualWindEnabled(checked);
+                        if (checked) {
+                          setShowWindVectors(true); // Automatisch Windvektoren anzeigen bei manuellem Wind
+                        }
+                      }}
+                      checkedChildren="Ein"
+                      unCheckedChildren="Aus"
+                    />
+                  </Space>
+
+                  {manualWindEnabled && (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Text>Windgeschwindigkeit:</Text>
+                        <br />
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          min={0}
+                          max={50}
+                          step={0.5}
+                          value={manualWindSpeed}
+                          onChange={(value) => setManualWindSpeed(value || 0)}
+                          addonAfter="m/s"
+                          placeholder="z.B. 5.0"
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Text>Windrichtung:</Text>
+                        <br />
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          min={0}
+                          max={359}
+                          step={15}
+                          value={manualWindDirection}
+                          onChange={(value) => setManualWindDirection(value || 0)}
+                          addonAfter="°"
+                          placeholder="270° = West"
+                        />
+                      </Col>
+                    </Row>
+                  )}
+
+                  {!manualWindEnabled && (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Text>Missionsstart:</Text>
+                        <br />
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          placeholder="Stunden von jetzt"
+                          min={0}
+                          max={168} // 1 Woche
+                          value={missionStartTime ? parseFloat(missionStartTime) : 0}
+                          onChange={(value) => setMissionStartTime(value?.toString() || '0')}
+                          addonAfter="h"
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <Text>Flugdauer (Schätzung):</Text>
+                        <br />
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          min={0.1}
+                          max={24}
+                          step={0.1}
+                          value={flightDuration}
+                          onChange={(value) => setFlightDuration(value || 1.0)}
+                          addonAfter="h"
+                        />
+                      </Col>
+                    </Row>
+                  )}
                 </>
               )}
             </Space>

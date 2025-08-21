@@ -187,3 +187,62 @@ class WindService:
             wind_vectors.append(wind_data)
             
         return wind_vectors
+    
+    def create_manual_wind_data(self, latitude: float, longitude: float, altitude: float,
+                               wind_speed_ms: float, wind_direction_deg: float) -> WindData:
+        """Erstellt manuelle WindData für Feldtests
+        
+        Args:
+            latitude: Breitengrad
+            longitude: Längengrad  
+            altitude: Höhe in Metern
+            wind_speed_ms: Manuelle Windgeschwindigkeit in m/s
+            wind_direction_deg: Manuelle Windrichtung in Grad (0-359)
+            
+        Returns:
+            WindData mit manuellen Windwerten
+        """
+        # Windvektor aus Geschwindigkeit und Richtung berechnen
+        wind_rad = math.radians(wind_direction_deg)
+        wind_vector_x = wind_speed_ms * math.sin(wind_rad)  # Ost-West Komponente
+        wind_vector_y = wind_speed_ms * math.cos(wind_rad)  # Nord-Süd Komponente
+        wind_vector_z = 0.0  # Vertikalwind meist vernachlässigbar für Feldtests
+        
+        return WindData(
+            latitude=latitude,
+            longitude=longitude,
+            altitude=altitude,
+            wind_speed_ms=round(wind_speed_ms, 2),
+            wind_direction_deg=wind_direction_deg,
+            wind_vector_x=round(wind_vector_x, 2),
+            wind_vector_y=round(wind_vector_y, 2),
+            wind_vector_z=wind_vector_z,
+            timestamp=datetime.now(timezone.utc).isoformat()
+        )
+    
+    async def get_wind_vectors_for_route_with_manual_override(self, waypoints: List[Dict[str, float]],
+                                                            manual_wind_speed_ms: float,
+                                                            manual_wind_direction_deg: float) -> List[WindData]:
+        """Windvektoren für eine Route mit manueller Wind-Override
+        
+        Args:
+            waypoints: Liste von Wegpunkten mit lat, lon, alt
+            manual_wind_speed_ms: Manuelle Windgeschwindigkeit
+            manual_wind_direction_deg: Manuelle Windrichtung
+            
+        Returns:
+            Liste von WindData mit manuellen Windwerten für alle Wegpunkte
+        """
+        wind_vectors = []
+        
+        for wp in waypoints:
+            wind_data = self.create_manual_wind_data(
+                latitude=wp['lat'],
+                longitude=wp['lon'],
+                altitude=wp['alt'],
+                wind_speed_ms=manual_wind_speed_ms,
+                wind_direction_deg=manual_wind_direction_deg
+            )
+            wind_vectors.append(wind_data)
+            
+        return wind_vectors

@@ -288,11 +288,11 @@ class EnergyCalculator:
                     energy_wh=interpolation_result['total_energy'],
                     average_speed_ms=interpolation_result['total_distance'] / interpolation_result['total_time'] if interpolation_result['total_time'] > 0 else 0,
                     average_power_w=interpolation_result['total_energy'] * 3600 / interpolation_result['total_time'] if interpolation_result['total_time'] > 0 else 0,
-                    wind_influence={
-                        "speed_ms": current_wind.wind_speed_ms if current_wind else 0,
-                        "direction_deg": current_wind.wind_direction_deg if current_wind else 0,
-                        "headwind_ms": current_wind.wind_vector_x if current_wind else 0,
-                        "crosswind_ms": current_wind.wind_vector_y if current_wind else 0,
+                    wind_influence=self._calculate_wind_components_relative_to_flight(wp1, wp2, current_wind) if current_wind else {
+                        "speed_ms": 0,
+                        "direction_deg": 0,
+                        "headwind_ms": 0,
+                        "crosswind_ms": 0,
                         "influence_factor": 1.0
                     }
                 )
@@ -334,11 +334,11 @@ class EnergyCalculator:
                     energy_wh=energy,
                     average_speed_ms=speed,
                     average_power_w=power,
-                    wind_influence={
-                        "speed_ms": current_wind.wind_speed_ms if current_wind else 0,
-                        "direction_deg": current_wind.wind_direction_deg if current_wind else 0,
-                        "headwind_ms": current_wind.wind_vector_x if current_wind else 0,
-                        "crosswind_ms": current_wind.wind_vector_y if current_wind else 0,
+                    wind_influence=self._calculate_wind_components_relative_to_flight(wp1, wp2, current_wind) if current_wind else {
+                        "speed_ms": 0,
+                        "direction_deg": 0,
+                        "headwind_ms": 0,
+                        "crosswind_ms": 0,
                         "influence_factor": 1.0
                     }
                 )
@@ -446,7 +446,7 @@ class EnergyCalculator:
             print(f"DEBUG: Average altitude: {avg_altitude}, Air density: {air_density}")
             
             # Leistungsberechnung für den gesamten Flug
-            print(f"DEBUG: About to call calculate_multirotor_power with speed={actual_horizontal_speed}, climb_rate={climb_rate}")
+            print(f"DEBUG: About to call calculate_multirotor_power with speed={actual_horizontal_speed}, climb_rate={climb_rate}, air_density={air_density}, wind_data={wind_data}")
             power = self.calculate_multirotor_power(config, actual_horizontal_speed, climb_rate, air_density, wind_data)
             print(f"DEBUG: Power calculated: {power}, type: {type(power)}")
             
@@ -485,4 +485,79 @@ class EnergyCalculator:
                 'total_time': 60.0,  # 1 minute fallback
                 'total_energy': float(config.mass) * 20.0 / 60,  # Simple energy estimate
                 'total_distance': 100.0  # 100m fallback
+            }
+    
+    def _calculate_wind_components_relative_to_flight(self, start_wp: Waypoint, end_wp: Waypoint, wind_data: WindData) -> Dict[str, float]:
+        """Berechnet Gegen- und Seitenwindkomponenten relativ zur Flugrichtung
+        
+        Args:
+            start_wp: Start-Waypoint
+            end_wp: Ziel-Waypoint  
+            wind_data: Windvektor-Daten
+            
+        Returns:
+            Dict mit wind_influence Komponenten
+        """
+        try:
+            print(f"DEBUG: _calculate_wind_components_relative_to_flight called")
+            print(f"DEBUG: Start WP: {start_wp.latitude}, {start_wp.longitude}")
+            print(f"DEBUG: End WP: {end_wp.latitude}, {end_wp.longitude}")
+            print(f"DEBUG: Wind data: speed={wind_data.wind_speed_ms}, dir={wind_data.wind_direction_deg}")
+            print(f"DEBUG: Wind vectors: x={wind_data.wind_vector_x}, y={wind_data.wind_vector_y}")
+            
+            # Flugrichtung berechnen (Bearing von start zu end)
+            lat1, lon1 = math.radians(start_wp.latitude), math.radians(start_wp.longitude)
+            lat2, lon2 = math.radians(end_wp.latitude), math.radians(end_wp.longitude)
+            
+            dlon = lon2 - lon1
+            
+            # Flugrichtung in Grad (0° = Norden, 90° = Osten)
+            flight_bearing_rad = math.atan2(
+                math.sin(dlon) * math.cos(lat2),
+                math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+            )
+            
+            flight_bearing_deg = (math.degrees(flight_bearing_rad) + 360) % 360
+            print(f"DEBUG: Flight bearing: {flight_bearing_deg}°")
+            
+            # Windrichtung und -vektoren
+            wind_speed = wind_data.wind_speed_ms
+            wind_direction_deg = wind_data.wind_direction_deg
+            wind_vector_x = wind_data.wind_vector_x  # Ost-West
+            wind_vector_y = wind_data.wind_vector_y  # Nord-Süd
+            
+            # Windvektor relativ zur Flugrichtung projizieren
+            # Flugrichtung als Einheitsvektor
+            flight_direction_x = math.sin(math.radians(flight_bearing_deg))  # Ost-West Komponente der Flugrichtung
+            flight_direction_y = math.cos(math.radians(flight_bearing_deg))  # Nord-Süd Komponente der Flugrichtung
+            
+            print(f"DEBUG: Flight direction vector: x={flight_direction_x}, y={flight_direction_y}")
+            
+            # Gegenwind: Windvektor projiziert auf Flugrichtung (negativ = Gegenwind)
+            headwind_ms = -(wind_vector_x * flight_direction_x + wind_vector_y * flight_direction_y)
+            
+            # Seitenwind: Windvektor senkrecht zur Flugrichtung
+            # Senkrechte Richtung: (-flight_direction_y, flight_direction_x) 
+            crosswind_ms = wind_vector_x * (-flight_direction_y) + wind_vector_y * flight_direction_x
+            
+            print(f"DEBUG: Calculated headwind: {headwind_ms}, crosswind: {crosswind_ms}")
+            
+            return {
+                "speed_ms": wind_speed,
+                "direction_deg": wind_direction_deg,
+                "headwind_ms": round(headwind_ms, 2),
+                "crosswind_ms": round(crosswind_ms, 2),
+                "influence_factor": 1.0,
+                "flight_bearing_deg": round(flight_bearing_deg, 1)  # Debug info
+            }
+            
+        except Exception as e:
+            print(f"ERROR in _calculate_wind_components_relative_to_flight: {e}")
+            # Fallback zu alten Werten
+            return {
+                "speed_ms": wind_data.wind_speed_ms,
+                "direction_deg": wind_data.wind_direction_deg,
+                "headwind_ms": 0,
+                "crosswind_ms": 0,
+                "influence_factor": 1.0
             }

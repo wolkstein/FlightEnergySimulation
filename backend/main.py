@@ -161,11 +161,28 @@ async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
         
         # Wind data für alle Waypoints abrufen
         wind_data = []
-        for waypoint in request.waypoints:
-            wind = await wind_service.get_wind_data(
-                waypoint.latitude, waypoint.longitude, waypoint.altitude
-            )
-            wind_data.append(wind)
+        
+        # Prüfen ob manueller Wind aktiviert ist
+        if request.manual_wind_enabled and request.manual_wind_speed_ms is not None and request.manual_wind_direction_deg is not None:
+            print(f"DEBUG: Using manual wind - Speed: {request.manual_wind_speed_ms} m/s, Direction: {request.manual_wind_direction_deg}°")
+            # Manuelle Winddaten für alle Waypoints erstellen
+            for waypoint in request.waypoints:
+                wind = wind_service.create_manual_wind_data(
+                    latitude=waypoint.latitude,
+                    longitude=waypoint.longitude, 
+                    altitude=waypoint.altitude,
+                    wind_speed_ms=request.manual_wind_speed_ms,
+                    wind_direction_deg=request.manual_wind_direction_deg
+                )
+                wind_data.append(wind)
+        else:
+            print("DEBUG: Using automatic wind data")
+            # Automatische Winddaten für alle Waypoints abrufen
+            for waypoint in request.waypoints:
+                wind = await wind_service.get_wind_data(
+                    waypoint.latitude, waypoint.longitude, waypoint.altitude
+                )
+                wind_data.append(wind)
         
         # Energieberechnung durchführen
         result = energy_calculator.calculate_energy_consumption(
