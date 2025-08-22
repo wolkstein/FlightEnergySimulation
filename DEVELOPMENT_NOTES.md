@@ -134,6 +134,7 @@ cd frontend && npm test
 - [x] **Manual Wind Override** - Manuelle Windeinstellung für Feldtests ✅ 21.08.2025
 - [x] **Wind Direction Fix** - Korrekte Headwind/Crosswind Projektion ✅ 21.08.2025
 - [x] **"Gentle" Backend Parameter Tuning** - Logfile-validierte Realismus-Optimierung ✅ 22.08.2025
+- [x] **State-Persistierung Fix** - Fahrzeugkonfiguration & Wegpunkte bleiben nach Simulation erhalten ✅ 22.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -155,6 +156,7 @@ cd frontend && npm test
 ## 🐛 Bekannte Issues
 
 ### Frontend
+- [x] **State-Persistierung:** Fahrzeugkonfiguration & Wegpunkte bleiben nach Simulation erhalten ✅ 22.08.2025
 - [ ] TypeScript Compile-Warnings bei Info-Button Tooltips
 - [ ] Map Resize-Issues bei Container-Größenänderungen
 - [ ] Mobile Safari: Touch-Events manchmal träge
@@ -244,6 +246,38 @@ max_efficiency_gain = 0.10    # Realistischere maximale Einsparung (statt 0.35)
 - **Hover Power:** 2160W (basierend auf echten Messungen)
 - **Sweet Spot Power:** 1523W bei 4 m/s (70.5% der Hover Power)
 - **Effizienzgewinn:** Maximal 10% Einsparung (statt 35%) - realistisch validiert
+
+### State-Persistierung Fix - GUI Usability Verbesserung (August 2025)
+
+#### Problem: Konfiguration wird nach Simulation zurückgesetzt
+Das ursprüngliche Verhalten war sehr benutzerunfreundlich:
+- Nach einer Simulation wurden Fahrzeugkonfiguration und Wegpunkte zurückgesetzt
+- Benutzer mussten alle Parameter erneut eingeben für Vergleichssimulationen
+- **Root Cause:** SimulationForm Komponente wurde komplett neu gemounted beim Wechsel zwischen Navigation-Items
+
+#### Lösung: App-Level State Management
+```typescript
+// App.tsx - Persistenter State auf oberster Ebene
+const [persistentVehicleConfig, setPersistentVehicleConfig] = useState<VehicleConfig | null>(null);
+const [persistentWaypoints, setPersistentWaypoints] = useState<Waypoint[]>([...]);
+
+// SimulationForm.tsx - Props-basierte State-Verwendung
+const vehicleConfig = persistentVehicleConfig;
+const waypoints = persistentWaypoints;
+```
+
+#### Architektur-Verbesserung
+- **State-Lifting:** State von SimulationForm-Level auf App-Level verschoben
+- **Props-basierte Persistierung:** Komponente erhält State als Props und gibt Änderungen via Callbacks zurück
+- **Komponentenlebenszyklus unabhängig:** State überlebt Component-Remounting
+- **Robuste Lösung:** Funktioniert auch bei komplexeren Navigation-Szenarien
+
+#### Verbesserungen
+- **Persistent State:** Fahrzeugkonfiguration & Wegpunkte bleiben zwischen Simulationen erhalten ✅
+- **Smart Reset:** Nur bei explizitem Fahrzeugtyp-Wechsel werden Default-Parameter geladen
+- **Vergleichsfreundlich:** Benutzer können einfach kleine Änderungen testen ohne Neueingabe
+- **Usability:** Deutlich verbesserte Benutzererfahrung für iterative Parameteroptimierung
+- **Validiert:** Erfolgreich getestet mit Waypoint-Import und Batterie-Konfiguration ✅
 
 ## 🔧 Debugging & Troubleshooting
 

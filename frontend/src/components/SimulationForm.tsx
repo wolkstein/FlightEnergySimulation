@@ -30,6 +30,10 @@ interface SimulationFormProps {
   onSimulationError: (error: string) => void;
   loading: boolean;
   setLoading: (loading: boolean) => void;
+  persistentVehicleConfig: VehicleConfig | null;
+  setPersistentVehicleConfig: (config: VehicleConfig | null) => void;
+  persistentWaypoints: Waypoint[];
+  setPersistentWaypoints: (waypoints: Waypoint[]) => void;
 }
 
 const SimulationForm: React.FC<SimulationFormProps> = ({
@@ -37,15 +41,19 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   onSimulationError,
   loading,
   setLoading,
+  persistentVehicleConfig,
+  setPersistentVehicleConfig,
+  persistentWaypoints,
+  setPersistentWaypoints,
 }) => {
   const [form] = Form.useForm();
   const [vehicleTypes, setVehicleTypes] = useState<VehicleInfo[]>([]);
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('multirotor');
-  const [vehicleConfig, setVehicleConfig] = useState<VehicleConfig | null>(null);
-  const [waypoints, setWaypoints] = useState<Waypoint[]>([
-    { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München
-    { latitude: 48.1451, longitude: 11.5920, altitude: 100 },
-  ]);
+  
+  // Verwende die persistenten Werte aus den Props statt lokaler State
+  const vehicleConfig = persistentVehicleConfig;
+  const waypoints = persistentWaypoints;
+  
   const [windConsideration, setWindConsideration] = useState(true);
   const [showMissionImport, setShowMissionImport] = useState(false);
   const [showWindVectors, setShowWindVectors] = useState(false);
@@ -58,31 +66,34 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   
   // Tab management
   const [activeTab, setActiveTab] = useState<string>('vehicle-config');
+  
+  // State-Persistierung: Verhindern dass Konfiguration bei Re-Renders zurückgesetzt wird
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     loadVehicleTypes();
   }, []);
 
   useEffect(() => {
-    if (vehicleTypes.length > 0) {
+    // Nur beim ersten Laden die Default-Parameter setzen, nicht bei späteren Re-Renders
+    if (vehicleTypes.length > 0 && !isInitialized) {
       const selectedVehicle = vehicleTypes.find(v => v.type === selectedVehicleType);
-      if (selectedVehicle) {
-        setVehicleConfig(selectedVehicle.default_params);
+      if (selectedVehicle && !vehicleConfig) {
+        setPersistentVehicleConfig(selectedVehicle.default_params);
         form.setFieldsValue({
           vehicle_type: selectedVehicleType,
           ...selectedVehicle.default_params,
         });
+        setIsInitialized(true);
       }
     }
-  }, [selectedVehicleType, vehicleTypes, form]);
+  }, [selectedVehicleType, vehicleTypes, form, isInitialized, vehicleConfig, setPersistentVehicleConfig]);
 
   const loadVehicleTypes = async () => {
     try {
       const vehicles = await apiService.getVehicleTypes();
       setVehicleTypes(vehicles);
-      if (vehicles.length > 0) {
-        setVehicleConfig(vehicles[0].default_params);
-      }
+      // Entfernt: Automatisches setzen der default_params - das macht jetzt der useEffect
     } catch (error) {
       message.error('Fehler beim Laden der Fahrzeugtypen');
       console.error('Error loading vehicle types:', error);
@@ -90,23 +101,35 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   };
 
   const handleVehicleTypeChange = (vehicleType: VehicleType) => {
-    setSelectedVehicleType(vehicleType);
+    // Nur wenn explizit ein anderer Fahrzeugtyp gewählt wird, die Config ändern
+    if (vehicleType !== selectedVehicleType) {
+      setSelectedVehicleType(vehicleType);
+      
+      // Default-Parameter nur setzen, wenn explizit gewechselt wird
+      const selectedVehicle = vehicleTypes.find(v => v.type === vehicleType);
+      if (selectedVehicle) {
+        setPersistentVehicleConfig(selectedVehicle.default_params);
+        form.setFieldsValue({
+          vehicle_type: vehicleType,
+          ...selectedVehicle.default_params,
+        });
+      }
+    }
   };
 
   const handleVehicleConfigChange = (config: VehicleConfig) => {
-    setVehicleConfig(config);
+    setPersistentVehicleConfig(config);
   };
 
   const handleWaypointsChange = (newWaypoints: Waypoint[]) => {
-    setWaypoints(newWaypoints);
+    setPersistentWaypoints(newWaypoints);
   };
 
-  const handleWaypointsImported = (importedWaypoints: Waypoint[]) => {
-    setWaypoints(importedWaypoints);
-    message.success(`${importedWaypoints.length} Waypoints erfolgreich importiert`);
-  };
-
-  const handleShowMissionImport = () => {
+  const handleMissionImport = (importedWaypoints: Waypoint[]) => {
+    setPersistentWaypoints(importedWaypoints);
+    setShowMissionImport(false);
+    message.success(`${importedWaypoints.length} Wegpunkte importiert`);
+  };  const handleShowMissionImport = () => {
     setShowMissionImport(true);
   };
 
@@ -121,13 +144,13 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
       longitude: lastWaypoint.longitude + 0.001,
       altitude: lastWaypoint.altitude,
     };
-    setWaypoints([...waypoints, newWaypoint]);
+    setPersistentWaypoints([...waypoints, newWaypoint]);
   };
 
   const removeWaypoint = (index: number) => {
     if (waypoints.length > 2) {
       const newWaypoints = waypoints.filter((_, i) => i !== index);
-      setWaypoints(newWaypoints);
+      setPersistentWaypoints(newWaypoints);
     } else {
       message.warning('Mindestens 2 Waypoints sind erforderlich');
     }
@@ -136,7 +159,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const updateWaypoint = (index: number, field: keyof Waypoint, value: number) => {
     const newWaypoints = [...waypoints];
     newWaypoints[index] = { ...newWaypoints[index], [field]: value };
-    setWaypoints(newWaypoints);
+    setPersistentWaypoints(newWaypoints);
   };
 
   const runSimulation = async () => {
@@ -458,7 +481,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
       <MissionImportComponent
         visible={showMissionImport}
         onClose={handleCloseMissionImport}
-        onWaypointsImported={handleWaypointsImported}
+        onWaypointsImported={handleMissionImport}
       />
     </div>
   );

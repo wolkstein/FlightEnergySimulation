@@ -27,7 +27,7 @@ import {
 import SimulationForm from './components/SimulationForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import SessionHistory from './components/SessionHistory';
-import { SimulationResult } from './types/simulation';
+import { SimulationResult, VehicleConfig, Waypoint } from './types/simulation';
 import './App.css';
 
 const { Header, Content, Sider } = Layout;
@@ -39,6 +39,13 @@ const App: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('simulation');
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // State-Persistierung auf App-Level für das gesamte Formular
+  const [persistentVehicleConfig, setPersistentVehicleConfig] = useState<VehicleConfig | null>(null);
+  const [persistentWaypoints, setPersistentWaypoints] = useState<Waypoint[]>([
+    { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München
+    { latitude: 48.1451, longitude: 11.5920, altitude: 100 },
+  ]);
 
   const handleSimulationComplete = (result: SimulationResult) => {
     setSimulationResult(result);
@@ -59,6 +66,10 @@ const App: React.FC = () => {
             onSimulationError={handleSimulationError}
             loading={loading}
             setLoading={setLoading}
+            persistentVehicleConfig={persistentVehicleConfig}
+            setPersistentVehicleConfig={setPersistentVehicleConfig}
+            persistentWaypoints={persistentWaypoints}
+            setPersistentWaypoints={setPersistentWaypoints}
           />
         );
       case 'results':
