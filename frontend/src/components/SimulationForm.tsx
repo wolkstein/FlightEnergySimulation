@@ -12,11 +12,13 @@ import {
   Typography,
   message,
   Space,
+  Tabs,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, PlayCircleOutlined, ImportOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, PlayCircleOutlined, ImportOutlined, CalculatorOutlined, SettingOutlined } from '@ant-design/icons';
 import WaypointMap from './WaypointMap';
 import VehicleConfigForm from './VehicleConfigForm';
 import MissionImportComponent from './MissionImportComponent';
+import SweetSpotAnalysis from './SweetSpotAnalysis';
 import { VehicleInfo, VehicleType, VehicleConfig, Waypoint, SimulationRequest, SimulationResult } from '../types/simulation';
 import { apiService } from '../services/api';
 
@@ -53,6 +55,9 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const [manualWindEnabled, setManualWindEnabled] = useState(false);
   const [manualWindSpeed, setManualWindSpeed] = useState<number>(5.0);
   const [manualWindDirection, setManualWindDirection] = useState<number>(270);
+  
+  // Tab management
+  const [activeTab, setActiveTab] = useState<string>('vehicle-config');
 
   useEffect(() => {
     loadVehicleTypes();
@@ -173,31 +178,65 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
       <Card title="Flugenergiesimulation" className="simulation-form">
         <Row gutter={[24, 24]}>
           <Col xs={24} lg={12}>
-            <Title level={4}>Fahrzeugkonfiguration</Title>
+            <Title level={4}>Fahrzeugkonfiguration & Analyse</Title>
             
-            <Form form={form} layout="vertical">
-              <Form.Item label="Fahrzeugtyp" name="vehicle_type">
-                <Select
-                  value={selectedVehicleType}
-                  onChange={handleVehicleTypeChange}
-                  size="large"
-                >
-                  {vehicleTypes.map((vehicle) => (
-                    <Option key={vehicle.type} value={vehicle.type}>
-                      {vehicle.name} - {vehicle.description}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Form>
+            <Tabs 
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              items={[
+                {
+                  key: 'vehicle-config',
+                  label: (
+                    <span>
+                      <SettingOutlined />
+                      Konfiguration
+                    </span>
+                  ),
+                  children: (
+                    <>
+                      <Form form={form} layout="vertical">
+                        <Form.Item label="Fahrzeugtyp" name="vehicle_type">
+                          <Select
+                            value={selectedVehicleType}
+                            onChange={handleVehicleTypeChange}
+                            size="large"
+                          >
+                            {vehicleTypes.map((vehicle) => (
+                              <Option key={vehicle.type} value={vehicle.type}>
+                                {vehicle.name} - {vehicle.description}
+                              </Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Form>
 
-            {vehicleConfig && (
-              <VehicleConfigForm
-                config={vehicleConfig}
-                vehicleType={selectedVehicleType}
-                onChange={handleVehicleConfigChange}
-              />
-            )}
+                      {vehicleConfig && (
+                        <VehicleConfigForm
+                          config={vehicleConfig}
+                          vehicleType={selectedVehicleType}
+                          onChange={handleVehicleConfigChange}
+                        />
+                      )}
+                    </>
+                  ),
+                },
+                {
+                  key: 'sweet-spot',
+                  label: (
+                    <span>
+                      <CalculatorOutlined />
+                      Sweet Spot
+                    </span>
+                  ),
+                  children: (
+                    <SweetSpotAnalysis
+                      vehicleConfig={vehicleConfig}
+                      vehicleType={selectedVehicleType}
+                    />
+                  ),
+                },
+              ]}
+            />
 
             <Divider />
 
