@@ -147,7 +147,7 @@ class GlauertAnalyzer:
             print(f"ERROR in calculate_glauert_power: {e}")
             return {'electrical_power': mass * 20.0, 'error': str(e)}  # Fallback
     
-    def calculate_current_backend_efficiency_factor(self, speed: float, config: VehicleConfig) -> float:
+    def calculate_current_backend_efficiency_factor(self, config: VehicleConfig, speed: float) -> float:
         """
         Replicate the current backend Sweet Spot calculation for comparison.
         This is the existing _calculate_speed_efficiency_factor logic.
@@ -217,7 +217,7 @@ class GlauertAnalyzer:
         
         for speed in speed_range:
             # Current backend method
-            efficiency_factor = self.calculate_current_backend_efficiency_factor(speed, config)
+            efficiency_factor = self.calculate_current_backend_efficiency_factor(config, speed)
             current_power = base_hover_power * efficiency_factor
             
             # Glauert method

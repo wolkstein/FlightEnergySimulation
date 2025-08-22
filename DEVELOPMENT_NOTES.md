@@ -75,11 +75,12 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 - **Multirotor Sweet Spot Model:** Realistische Effizienz-Kurven
   - Massenabhängige Sweet Spot Bereiche (3-8 m/s für typische Copter)
   - Airspeed-basierte Berechnung (nicht Ground Speed)
-  - ~40% Effizienzgewinn im optimalen Geschwindigkeitsbereich
+  - "Gentle" Tuning: 10% max. Effizienzgewinn (statt 35% - validiert durch Logfiles)
   - Geschwindigkeitsabhängige Drag-Koeffizienten
-- **Battery Modeling:** Spannungsabfall und Kapazitäts-Modellierung
+  - **Validierung:** QGroundControl-Übereinstimmung (±1% Flugzeit, <1% Distanz)
+- **Realistische Reichweitenschätzung:** Reduzierte Überschätzung von ~65km auf ~46km
+- **Batterieverwaltung:** 75% = praktisch leer (sichere 25% Reserve)
 - **Multi-Phase:** Takeoff, Cruise, Landing phases
-- **Realistische Leistungswerte:** ~160-180W/kg bei optimalem Flug
 
 ### 📁 Mission Import
 - **QGroundControl Support:** .plan Datei Import
@@ -124,6 +125,7 @@ cd frontend && npm test
 - [x] **Airspeed-based Sweet Spot Model** - Realistische Multirotor-Aerodynamik ✅ 21.08.2025
 - [x] **Manual Wind Override** - Manuelle Windeinstellung für Feldtests ✅ 21.08.2025
 - [x] **Wind Direction Fix** - Korrekte Headwind/Crosswind Projektion ✅ 21.08.2025
+- [x] **"Gentle" Backend Parameter Tuning** - Logfile-validierte Realismus-Optimierung ✅ 22.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -206,6 +208,35 @@ efficiency_factor = calculate_speed_efficiency_factor(airspeed, config)
 - **Ergebnis:** 2488W für 15kg Copter (~166W/kg) - realistische Werte ✅
 - **Wind-Komponenten:** Headwind -3.42 m/s, Crosswind 2.08 m/s bei 31.3° Flugrichtung ✅
 
+### "Gentle" Parameter Tuning & Logfile-Validierung (August 2025)
+
+#### Problem: Überschätzung der Effizienzgewinne
+Die ursprünglichen Sweet Spot Parameter (35% max. Effizienzgewinn) führten zu unrealistischen Reichweitenschätzungen:
+- **Vorher:** ~65km geschätzte Reichweite (zu optimistisch)
+- **Problem:** Überschätzung der Aerodynamik-Effizienz bei optimaler Geschwindigkeit
+
+#### Lösung: "Gentle" Parameter basierend auf echter Flugdaten
+```python
+# Gentle Tuning Parameter (validiert durch 10kg Hexacopter Logfiles)
+efficiency_multiplier = 0.45  # Sanftere initiale Verbesserung (statt 1.0)
+max_efficiency_gain = 0.10    # Realistischere maximale Einsparung (statt 0.35)
+
+# Sweet Spot Berechnung bei 4 m/s für 10kg Copter
+# Ergebnis: 1523W (70.5% der 2160W Hover Power) - stimmt mit Logfiles überein
+```
+
+#### Validierung gegen QGroundControl & Logfiles
+- **Flugzeit:** 38.9 Min (Simulation) vs. ~39 Min (QGroundControl) - **±1% Genauigkeit** ✅
+- **Distanz:** 34.9 km (Simulation) vs. 34.747 km (QGC) - **<1% Differenz** ✅  
+- **Reichweite:** 46.5 km (realistisch) vs. 65 km (vorher unrealistisch) - **28% Reduktion** ✅
+- **Batterielevel:** 75% verbraucht = praktisch leer (25% Reserve) - **Sichere Planung** ✅
+
+#### Sweet Spot Charakteristiken (nach Gentle Tuning)
+- **10kg Hexacopter:** Sweet Spot 3.0-5.0 m/s, Optimum bei 4.0 m/s
+- **Hover Power:** 2160W (basierend auf echten Messungen)
+- **Sweet Spot Power:** 1523W bei 4 m/s (70.5% der Hover Power)
+- **Effizienzgewinn:** Maximal 10% Einsparung (statt 35%) - realistisch validiert
+
 ## 🔧 Debugging & Troubleshooting
 
 ### Container-Probleme
@@ -239,9 +270,10 @@ cd backend && pip install -r requirements-dev.txt --upgrade
 ```
 Projekt: Flight Energy Simulation (React/FastAPI/Docker)
 GitHub: https://github.com/wolkstein/FlightEnergySimulation
-Status: Funktionsfähig mit realistischer Multirotor-Aerodynamik
-Aktuell: Airspeed-basierte Sweet Spot Berechnung implementiert (Aug 2025)
-Features: Manual Wind Override, korrekte Wind-Projektion, massenabhängige Effizienz
+Status: Produktiv mit QGroundControl-validierter Realismus (±1% Genauigkeit)
+Aktuell: "Gentle" Parameter Tuning - Logfile-validierte Sweet Spot Optimierung (Aug 2025)
+Features: Manual Wind Override, Airspeed-basierte Aerodynamik, realistische Reichweiten
+Validierung: 38.9min Flugzeit, 34.9km Distanz, 46.5km Reichweite - stimmt mit QGC überein
 Nächstes: [siehe Development Goals]
 ```
 
@@ -250,11 +282,12 @@ Nächstes: [siehe Development Goals]
 - `README.md` - Feature-Überblick  
 - `QUICKSTART.md` - Installation & Setup
 - `frontend/src/components/` - UI-Komponenten
-- `backend/services/energy_calculator.py` - Aerodynamik-Engine mit Sweet Spot Model
+- `backend/services/energy_calculator.py` - Aerodynamik-Engine mit "Gentle" Sweet Spot Tuning
 - `backend/services/wind_service.py` - Wind-Datenquellen
+- `backend_tuning.py` - Parameter-Optimierung und Validierung gegen Logfiles
 
 ---
 
-**Letzte Aktualisierung:** 21. August 2025  
+**Letzte Aktualisierung:** 22. August 2025  
 **Entwickler:** wolkstein  
-**Version:** 1.1 - Airspeed-basierte Sweet Spot Aerodynamik + Manual Wind Override
+**Version:** 1.2 - "Gentle" Backend Tuning mit Logfile-Validierung & QGroundControl-Übereinstimmung

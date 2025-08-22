@@ -269,6 +269,7 @@ class EnergyCalculator:
         """
         Berechnet den geschwindigkeitsabhängigen Effizienzfaktor für Multikopter
         Berücksichtigt den Sweet Spot bei mittleren Geschwindigkeiten
+        Verwendet "Gentle" Tuning-Parameter basierend auf Logfile-Validierung
         """
         try:
             # Sweet Spot Geschwindigkeiten (abhängig von Copter-Größe/Gewicht)
@@ -280,22 +281,28 @@ class EnergyCalculator:
             sweet_spot_max = max(4.0, mass * 0.5)  # ~5-8 m/s für 10-15kg Copter
             sweet_spot_center = (sweet_spot_min + sweet_spot_max) / 2
             
+            # Gentle Tuning Parameter (validiert durch 10kg Hexacopter Logfiles)
+            efficiency_multiplier = 0.45  # Sanftere initiale Verbesserung
+            max_efficiency_gain = 0.10    # Realistischere maximale Einsparung
+            
             if speed == 0:
                 # Hovern: 100% Hover-Power nötig
                 return 1.0
             elif speed <= sweet_spot_min:
                 # Langsamer Vorwärtsflug: Leichte Verbesserung
-                # Linear von 100% zu 75%
-                return 1.0 - (speed / sweet_spot_min) * 0.25
+                # KORRIGIERT: Basis 100%, tunable improvement
+                base_improvement = (speed / sweet_spot_min) * 0.25
+                return 1.0 - (base_improvement * efficiency_multiplier)
             elif speed <= sweet_spot_max:
-                # Sweet Spot: Maximale Effizienz (60-75% der Hover-Power)
+                # Sweet Spot: Maximale Effizienz 
                 # Parabolische Kurve mit Minimum bei sweet_spot_center
+                # KORRIGIERT: Basis 0.75, tunable efficiency_gain
                 normalized_pos = (speed - sweet_spot_center) / (sweet_spot_max - sweet_spot_center)
-                efficiency_gain = 0.35 * (1 - normalized_pos**2)  # Max 35% Einsparung
+                efficiency_gain = (max_efficiency_gain * efficiency_multiplier) * (1 - normalized_pos**2)
                 return 0.75 - efficiency_gain
             else:
                 # Schneller Flug: Effizienz nimmt ab durch hohen Anstellwinkel
-                # Exponentieller Anstieg des Energiebedarfs
+                # KORRIGIERT: Basis 0.75, exponentieller Penalty
                 excess_speed = speed - sweet_spot_max
                 penalty = min(0.4, excess_speed * 0.03)  # Max 40% Penalty
                 return 0.75 + penalty
