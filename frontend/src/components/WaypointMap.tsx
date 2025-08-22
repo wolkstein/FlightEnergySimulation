@@ -182,7 +182,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
   onWaypointRemove,
   onWaypointUpdate,
   onChange,
-  height = '600px',
+  height = '800px',
   showWindVectors = false,
   missionStartTime,
   flightDuration,
@@ -225,7 +225,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
   const routeCoordinates: [number, number][] = waypoints.map(wp => [wp.latitude, wp.longitude]);
 
   return (
-    <div style={{ height, width: '100%' }}>
+    <div className="waypoint-map-container">
       <MapContainer
         center={center}
         zoom={13}

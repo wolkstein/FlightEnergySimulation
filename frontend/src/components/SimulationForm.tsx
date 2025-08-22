@@ -263,7 +263,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
 
             <Divider />
 
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Space direction="vertical" size="middle" className="space-full-width">
               <Space>
                 <Text>Windberücksichtigung:</Text>
                 <Switch
@@ -307,7 +307,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                         <Text>Windgeschwindigkeit:</Text>
                         <br />
                         <InputNumber
-                          style={{ width: '100%' }}
+                          className="full-width"
                           min={0}
                           max={50}
                           step={0.5}
@@ -321,7 +321,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                         <Text>Windrichtung:</Text>
                         <br />
                         <InputNumber
-                          style={{ width: '100%' }}
+                          className="full-width"
                           min={0}
                           max={359}
                           step={15}
@@ -340,7 +340,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                         <Text>Missionsstart:</Text>
                         <br />
                         <InputNumber
-                          style={{ width: '100%' }}
+                          className="full-width"
                           placeholder="Stunden von jetzt"
                           min={0}
                           max={168} // 1 Woche
@@ -353,7 +353,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                         <Text>Flugdauer (Schätzung):</Text>
                         <br />
                         <InputNumber
-                          style={{ width: '100%' }}
+                          className="full-width"
                           min={0.1}
                           max={24}
                           step={0.1}
@@ -375,7 +375,6 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
             <WaypointMap
               waypoints={waypoints}
               onChange={handleWaypointsChange}
-              height="400px"
               showWindVectors={showWindVectors && windConsideration}
               missionStartTime={missionStartTime ? new Date(Date.now() + parseFloat(missionStartTime) * 3600000).toISOString() : undefined}
               flightDuration={flightDuration}
@@ -384,8 +383,8 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
               manualWindDirection={manualWindDirection}
             />
 
-            <div style={{ marginTop: 16 }}>
-              <Space style={{ marginBottom: 16 }}>
+            <div className="section-spacing">
+              <Space className="space-margin-bottom">
                 <Button
                   type="dashed"
                   icon={<PlusOutlined />}
@@ -402,7 +401,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                 </Button>
               </Space>
 
-              <div className="waypoint-list" style={{ maxHeight: 200, overflowY: 'auto' }}>
+              <div className="waypoint-list">
                 {waypoints.map((waypoint, index) => (
                   <Card
                     key={index}
@@ -418,7 +417,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                         />
                       )
                     }
-                    style={{ marginBottom: 8 }}
+                    className="card-margin-bottom"
                   >
                     <Row gutter={8}>
                       <Col span={8}>
@@ -430,7 +429,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           onChange={(value) => updateWaypoint(index, 'latitude', value || 0)}
                           precision={6}
                           step={0.001}
-                          style={{ width: '100%' }}
+                          className="full-width"
                         />
                       </Col>
                       <Col span={8}>
@@ -442,7 +441,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           onChange={(value) => updateWaypoint(index, 'longitude', value || 0)}
                           precision={6}
                           step={0.001}
-                          style={{ width: '100%' }}
+                          className="full-width"
                         />
                       </Col>
                       <Col span={8}>
@@ -454,7 +453,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           onChange={(value) => updateWaypoint(index, 'altitude', value || 0)}
                           min={0}
                           max={1000}
-                          style={{ width: '100%' }}
+                          className="full-width"
                         />
                       </Col>
                     </Row>
@@ -467,7 +466,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
 
         <Divider />
 
-        <div style={{ textAlign: 'center' }}>
+        <div className="text-center">
           <Button
             type="primary"
             size="large"

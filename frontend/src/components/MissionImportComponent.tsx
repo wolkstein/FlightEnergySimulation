@@ -116,12 +116,12 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
         footer={null}
         width={700}
       >
-        <div style={{ padding: '20px 0' }}>
+        <div className="content-padding">
           <Title level={4}>
             <FileTextOutlined /> Import Waypoints from Mission Files
           </Title>
           
-          <div style={{ marginBottom: 20 }}>
+          <div className="section-margin-bottom">
             <Text>
               <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
               Supported formats:
@@ -144,7 +144,7 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
           </Upload>
 
           {loading && (
-            <div style={{ marginTop: 16 }}>
+            <div className="section-spacing">
               <Text type="secondary">Processing file...</Text>
             </div>
           )}

@@ -31,6 +31,7 @@ import ResultsDisplay from './components/ResultsDisplay';
 import SessionHistory from './components/SessionHistory';
 import { SimulationResult, VehicleConfig, Waypoint } from './types/simulation';
 import './App.css';
+import './mobile-override.css'; // Load mobile override CSS last
 
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
@@ -97,7 +98,7 @@ const App: React.FC = () => {
         return simulationResult ? (
           <ResultsDisplay result={simulationResult} />
         ) : (
-          <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div className="content-centered">
             <Typography.Text type="secondary">
               Keine Simulationsergebnisse verfügbar. Bitte führen Sie zuerst eine Simulation durch.
             </Typography.Text>
@@ -107,7 +108,7 @@ const App: React.FC = () => {
         return <SessionHistory />;
       case 'settings':
         return (
-          <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div className="content-centered">
             <Typography.Text type="secondary">
               Einstellungen werden in einer zukünftigen Version verfügbar sein.
             </Typography.Text>
@@ -137,11 +138,7 @@ const App: React.FC = () => {
           bottom: 0,
         }}
       >
-        <div style={{ 
-          padding: collapsed ? '10px 5px' : '20px', 
-          textAlign: 'center',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
+        <div className={collapsed ? 'sidebar-header-collapsed' : 'sidebar-header'}>
           {!collapsed && <Title level={4} style={{ margin: 0 }}>Flight Energy</Title>}
           {collapsed && !isMobile && <Title level={5} style={{ margin: 0 }}>FE</Title>}
         </div>
@@ -180,13 +177,14 @@ const App: React.FC = () => {
         />
       </Sider>
       
-      <Layout style={{ marginLeft: isMobile && collapsed ? 0 : (collapsed ? 80 : 200) }}>
+      <Layout style={{ marginLeft: isMobile && collapsed ? 0 : (collapsed ? 80 : 200), transition: 'margin-left 0.2s' }}>
         <Header style={{ 
           background: '#fff', 
-          padding: '0 20px',
+          padding: isMobile ? '0 8px' : '0 16px', // Less padding on mobile
           display: 'flex',
           alignItems: 'center',
-          borderBottom: '1px solid #f0f0f0'
+          borderBottom: '1px solid #f0f0f0',
+          height: '48px' // Smaller header on mobile
         }}>
           {isMobile && (
             <div 
@@ -209,17 +207,11 @@ const App: React.FC = () => {
         </Header>
         
         <Content style={{ 
-          margin: isMobile ? '12px 8px 0' : '24px 16px 0', 
+          margin: 0, // Remove all margins
+          padding: 0, // Remove all padding
           overflow: 'initial' 
         }}>
-          <div style={{ 
-            padding: isMobile ? 12 : 24, 
-            background: '#fff', 
-            minHeight: 360,
-            borderRadius: isMobile ? '4px' : '8px',
-            boxShadow: isMobile ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.1)',
-            border: isMobile ? '1px solid #f0f0f0' : 'none'
-          }}>
+          <div className="content-main">
             {renderContent()}
           </div>
         </Content>

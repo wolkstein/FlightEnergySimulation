@@ -27,7 +27,7 @@ export const WindVectorLayer: React.FC<{
 
     const loadWindData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/wind/route', {
+        const response = await fetch('/api/wind/route', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

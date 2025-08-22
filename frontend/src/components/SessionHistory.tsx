@@ -83,7 +83,7 @@ const SessionHistory: React.FC = () => {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div className="container-centered">
       <Card
         title="Simulation Verlauf"
         extra={

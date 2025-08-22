@@ -1,0 +1,46 @@
+/* Mobile Shadow Killer - This file removes ALL shadows on mobile devices */
+@media screen and (max-width: 768px) {
+  /* Kill ALL shadows with maximum priority */
+  html *, html *::before, html *::after,
+  body *, body *::before, body *::after,
+  #root *, #root *::before, #root *::after {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+  
+  /* Override any CSS-in-JS shadows */
+  [style*="box-shadow"] {
+    box-shadow: none !important;
+  }
+  
+  [style*="boxShadow"] {
+    box-shadow: none !important;
+  }
+  
+  /* Ant Design nuclear option */
+  div[class*="ant-"],
+  span[class*="ant-"],
+  button[class*="ant-"],
+  input[class*="ant-"],
+  form[class*="ant-"],
+  table[class*="ant-"],
+  ul[class*="ant-"],
+  li[class*="ant-"] {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  /* Double down for small screens */
+  * {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+  }
+}

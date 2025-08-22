@@ -53,7 +53,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
 
   // Hilfsfunktion für Label mit Info-Button
   const createInfoLabel = (text: string, infoKey: keyof typeof infoTooltips) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div className="flex-center">
       <Tooltip 
         title={infoTooltips[infoKey]} 
         placement="topLeft" 
@@ -275,7 +275,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.drag_coefficient}
               onChange={(value) => handleFieldChange('drag_coefficient', value || 0)}
               min={0.01}
-              max={0.1}
+              max={1.0}
               step={0.001}
               precision={3}
               style={{ width: '100%' }}

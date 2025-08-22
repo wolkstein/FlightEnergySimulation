@@ -214,7 +214,7 @@ const SweetSpotAnalysis: React.FC<SweetSpotAnalysisProps> = ({
         )}
 
         {/* Power vs Speed Chart */}
-        <div style={{ width: '100%', height: '400px' }}>
+        <div className="chart-container-large">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={calculateSweetSpotData}>
               <CartesianGrid strokeDasharray="3 3" />

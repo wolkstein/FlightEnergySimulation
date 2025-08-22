@@ -31,16 +31,16 @@ code {
   color: #61dafb;
 }
 
-/* Leaflet Map Styles */
+/* Leaflet Map Styles - Using CSS Variables */
 .leaflet-container {
-  height: 400px;
+  height: var(--map-height);
   width: 100%;
 }
 
 /* Custom styles */
 .simulation-form {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 20px;
 }
 
@@ -58,5 +58,5 @@ code {
 
 .energy-chart {
   margin-top: 20px;
-  height: 300px;
+  height: var(--chart-height-medium);
 }

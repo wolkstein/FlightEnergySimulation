@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { VehicleInfo, SimulationRequest, SimulationResult, SimulationSession, WindData } from '../types/simulation';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// Use relative URL for Docker container with nginx proxy, fallback to localhost for development
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:8000');
 
 const api = axios.create({
   baseURL: API_BASE_URL,

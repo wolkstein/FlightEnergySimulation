@@ -75,7 +75,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
                       result.battery_usage_percent > 60 ? '#faad14' : '#52c41a';
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div className="container-centered">
       {/* Übersicht */}
       <Card title="Simulationsergebnisse - Übersicht" style={{ marginBottom: 24 }}>
         <Row gutter={[24, 24]}>
@@ -126,7 +126,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
       <Card title="Batteriestatus" style={{ marginBottom: 24 }}>
         <Row gutter={[24, 24]} align="middle">
           <Col xs={24} lg={12}>
-            <div style={{ textAlign: 'center' }}>
+            <div className="text-center">
               <Progress
                 type="circle"
                 percent={result.battery_usage_percent}
@@ -134,7 +134,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
                 strokeColor={batteryColor}
                 format={percent => `${percent?.toFixed(1)}%`}
               />
-              <div style={{ marginTop: 16 }}>
+              <div className="section-spacing">
                 <Text strong>Batterienverbrauch</Text>
               </div>
             </div>
@@ -166,7 +166,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
 
       {/* Energiediagramm */}
       <Card title="Energieverbrauch pro Segment" style={{ marginBottom: 24 }}>
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="chart-container-medium">
+          <ResponsiveContainer width="100%" height="100%">
           <BarChart data={energyChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="segment" />
@@ -178,11 +179,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
             <Bar yAxisId="right" dataKey="power_w" fill="#52c41a" name="Ø Leistung (W)" />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </Card>
 
       {/* Leistungsdiagramm */}
       <Card title="Leistung über Distanz" style={{ marginBottom: 24 }}>
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="chart-container-medium">
+          <ResponsiveContainer width="100%" height="100%">
           <LineChart data={energyChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="segment" />
@@ -192,6 +195,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
             <Line type="monotone" dataKey="power_w" stroke="#8884d8" strokeWidth={2} name="Leistung (W)" />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </Card>
 
       {/* Detailtabelle */}
