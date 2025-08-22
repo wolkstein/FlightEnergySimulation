@@ -25,6 +25,14 @@ const DefaultIcon = L.icon({
   shadowSize: [41, 41],
 });
 
+// Custom Waypoint Icon (blau)
+const WaypointIcon = L.divIcon({
+  html: '<div style="background: #3388ff; border: 2px solid white; border-radius: 50%; width: 16px; height: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  className: 'waypoint-icon'
+});
+
 L.Marker.prototype.options.icon = DefaultIcon;
 
 interface WaypointMapProps {
@@ -254,22 +262,40 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
           />
         )}
 
-        {/* Waypoint Marker */}
+        {/* Waypoint Marker - Draggable */}
         {waypoints.map((waypoint, index) => (
-          <CircleMarker
+          <Marker
             key={index}
-            center={[waypoint.latitude, waypoint.longitude]}
-            radius={8}
-            pathOptions={{
-              fillColor: '#3388ff',
-              fillOpacity: 0.8,
-              color: '#ffffff',
-              weight: 2,
-              opacity: 1
-            }}
+            position={[waypoint.latitude, waypoint.longitude]}
+            icon={WaypointIcon}
+            draggable={true}
             eventHandlers={{
               click: (event) => {
                 console.log(`Waypoint ${index + 1} clicked`);
+                // Verhindere, dass der Map-Click-Handler ausgelöst wird
+                L.DomEvent.stopPropagation(event);
+              },
+              dragend: (event) => {
+                const marker = event.target;
+                const position = marker.getLatLng();
+                console.log(`Waypoint ${index + 1} moved to:`, position);
+                
+                const updatedWaypoint: Waypoint = {
+                  ...waypoint,
+                  latitude: position.lat,
+                  longitude: position.lng
+                };
+                
+                // Aktualisiere diesen spezifischen Waypoint
+                if (onWaypointUpdate) {
+                  onWaypointUpdate(index, updatedWaypoint);
+                } else if (onChange) {
+                  // Fallback: Aktualisiere ganzes Array
+                  const updatedWaypoints = waypoints.map((wp, i) => 
+                    i === index ? updatedWaypoint : wp
+                  );
+                  onChange(updatedWaypoints);
+                }
               }
             }}
           >
@@ -279,6 +305,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
                 Lat: {waypoint.latitude.toFixed(6)}<br />
                 Lon: {waypoint.longitude.toFixed(6)}<br />
                 Alt: {waypoint.altitude || 100}m<br />
+                <small><i>Drag to move</i></small><br />
                 {onWaypointRemove && (
                   <button 
                     onClick={() => onWaypointRemove(index)}
@@ -289,7 +316,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
                 )}
               </div>
             </Popup>
-          </CircleMarker>
+          </Marker>
         ))}
         
         {/* Wind Vectors */}
