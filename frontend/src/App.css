@@ -80,3 +80,81 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .simulation-container {
+    padding: 10px;
+  }
+  
+  .leaflet-container {
+    height: 300px;
+  }
+  
+  .results-summary {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .energy-chart-container {
+    padding: 15px;
+  }
+  
+  .simulation-form {
+    padding: 16px;
+  }
+  
+  .ant-layout-header {
+    height: auto !important;
+    line-height: normal !important;
+    padding: 10px 16px !important;
+  }
+  
+  .ant-layout-header .ant-typography {
+    font-size: 18px !important;
+    margin: 8px 0 !important;
+  }
+  
+  .ant-col {
+    margin-bottom: 8px;
+  }
+  
+  .ant-form-item {
+    margin-bottom: 12px !important;
+  }
+  
+  .ant-card {
+    margin-bottom: 12px;
+  }
+  
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .simulation-form {
+    padding: 12px;
+  }
+  
+  .ant-layout-header .ant-typography {
+    font-size: 16px !important;
+  }
+  
+  .ant-btn {
+    font-size: 12px;
+    height: 32px;
+  }
+  
+  .leaflet-container {
+    height: 250px;
+  }
+  
+  .ant-form-item-label {
+    padding-bottom: 4px !important;
+  }
+  
+  .ant-input, .ant-select-selector {
+    font-size: 14px;
+  }
+}

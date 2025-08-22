@@ -16,13 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Typography, message } from 'antd';
 import {
   HomeOutlined,
   CalculatorOutlined,
   HistoryOutlined,
   SettingOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
 } from '@ant-design/icons';
 import SimulationForm from './components/SimulationForm';
 import ResultsDisplay from './components/ResultsDisplay';
@@ -39,6 +41,10 @@ const App: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('simulation');
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Responsive Sidebar State
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // State-Persistierung auf App-Level für das gesamte Formular
   const [persistentVehicleConfig, setPersistentVehicleConfig] = useState<VehicleConfig | null>(null);
@@ -46,6 +52,21 @@ const App: React.FC = () => {
     { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München
     { latitude: 48.1451, longitude: 11.5920, altitude: 100 },
   ]);
+
+  // Responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setCollapsed(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSimulationComplete = (result: SimulationResult) => {
     setSimulationResult(result);
@@ -99,14 +120,41 @@ const App: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={200} theme="light">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <Title level={4}>Flight Energy</Title>
+      <Sider 
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        breakpoint="lg"
+        collapsedWidth={isMobile ? 0 : 80}
+        width={200} 
+        theme="light"
+        style={{
+          overflow: 'auto',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+        }}
+      >
+        <div style={{ 
+          padding: collapsed ? '10px 5px' : '20px', 
+          textAlign: 'center',
+          borderBottom: '1px solid #f0f0f0'
+        }}>
+          {!collapsed && <Title level={4} style={{ margin: 0 }}>Flight Energy</Title>}
+          {collapsed && !isMobile && <Title level={5} style={{ margin: 0 }}>FE</Title>}
         </div>
         <Menu
           mode="inline"
           selectedKeys={[selectedMenu]}
-          onSelect={({ key }) => setSelectedMenu(key as MenuKey)}
+          onSelect={({ key }) => {
+            setSelectedMenu(key as MenuKey);
+            if (isMobile) {
+              setCollapsed(true);
+            }
+          }}
+          inlineCollapsed={collapsed}
           items={[
             {
               key: 'simulation',
@@ -132,9 +180,27 @@ const App: React.FC = () => {
         />
       </Sider>
       
-      <Layout>
-        <Header style={{ background: '#fff', padding: '0 20px' }}>
-          <Title level={2} style={{ margin: '16px 0' }}>
+      <Layout style={{ marginLeft: isMobile && collapsed ? 0 : (collapsed ? 80 : 200) }}>
+        <Header style={{ 
+          background: '#fff', 
+          padding: '0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: '1px solid #f0f0f0'
+        }}>
+          {isMobile && (
+            <div 
+              style={{ 
+                fontSize: '18px', 
+                cursor: 'pointer', 
+                marginRight: '20px' 
+              }}
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+          )}
+          <Title level={isMobile ? 3 : 2} style={{ margin: '16px 0', flex: 1 }}>
             {selectedMenu === 'simulation' && 'Energieverbrauch Simulation'}
             {selectedMenu === 'results' && 'Simulationsergebnisse'}
             {selectedMenu === 'history' && 'Simulation Verlauf'}
@@ -142,8 +208,16 @@ const App: React.FC = () => {
           </Title>
         </Header>
         
-        <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
-          <div style={{ padding: 24, background: '#fff', minHeight: 360 }}>
+        <Content style={{ 
+          margin: isMobile ? '12px 8px 0' : '24px 16px 0', 
+          overflow: 'initial' 
+        }}>
+          <div style={{ 
+            padding: isMobile ? 12 : 24, 
+            background: '#fff', 
+            minHeight: 360,
+            borderRadius: '8px'
+          }}>
             {renderContent()}
           </div>
         </Content>

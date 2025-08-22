@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Waypoint } from '../types/simulation';
 import { SimpleWindVector } from './SimpleWindVector';
@@ -256,39 +256,20 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
 
         {/* Waypoint Marker */}
         {waypoints.map((waypoint, index) => (
-          <Marker
+          <CircleMarker
             key={index}
-            position={[waypoint.latitude, waypoint.longitude]}
-            draggable={true}
+            center={[waypoint.latitude, waypoint.longitude]}
+            radius={8}
+            pathOptions={{
+              fillColor: '#3388ff',
+              fillOpacity: 0.8,
+              color: '#ffffff',
+              weight: 2,
+              opacity: 1
+            }}
             eventHandlers={{
-              dragend: (event) => {
-                console.log('Marker drag ended');
-                const marker = event.target;
-                const position = marker.getLatLng();
-                console.log(`Waypoint ${index + 1} dragged to:`, position);
-                
-                const updatedWaypoint = {
-                  ...waypoint,
-                  latitude: position.lat,
-                  longitude: position.lng
-                };
-                
-                console.log('Updated waypoint:', updatedWaypoint);
-                console.log('onWaypointUpdate available:', !!onWaypointUpdate);
-                console.log('onChange available:', !!onChange);
-                
-                if (onWaypointUpdate) {
-                  console.log('Calling onWaypointUpdate');
-                  onWaypointUpdate(index, updatedWaypoint);
-                }
-                
-                // For compatibility with SimulationForm
-                if (onChange) {
-                  const newWaypoints = [...waypoints];
-                  newWaypoints[index] = updatedWaypoint;
-                  console.log('Calling onChange with updated waypoints:', newWaypoints.length);
-                  onChange(newWaypoints);
-                }
+              click: (event) => {
+                console.log(`Waypoint ${index + 1} clicked`);
               }
             }}
           >
@@ -308,7 +289,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
                 )}
               </div>
             </Popup>
-          </Marker>
+          </CircleMarker>
         ))}
         
         {/* Wind Vectors */}
@@ -349,8 +330,7 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
         zIndex: 1000
       }}>
         Waypoints: {waypoints.length}<br/>
-        Klick auf Karte zum Hinzufügen<br/>
-        Marker ziehen zum Verschieben
+        Klick auf Karte zum Hinzufügen
       </div>
     </div>
   );
