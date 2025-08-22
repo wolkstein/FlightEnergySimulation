@@ -135,6 +135,7 @@ cd frontend && npm test
 - [x] **Wind Direction Fix** - Korrekte Headwind/Crosswind Projektion ✅ 21.08.2025
 - [x] **"Gentle" Backend Parameter Tuning** - Logfile-validierte Realismus-Optimierung ✅ 22.08.2025
 - [x] **State-Persistierung Fix** - Fahrzeugkonfiguration & Wegpunkte bleiben nach Simulation erhalten ✅ 22.08.2025
+- [x] **Manual Wind Arrow Display Fix** - Manuelle Windpfeile werden korrekt auf Karte angezeigt ✅ 22.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen

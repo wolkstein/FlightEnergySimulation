@@ -379,6 +379,9 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
               showWindVectors={showWindVectors && windConsideration}
               missionStartTime={missionStartTime ? new Date(Date.now() + parseFloat(missionStartTime) * 3600000).toISOString() : undefined}
               flightDuration={flightDuration}
+              manualWindEnabled={manualWindEnabled}
+              manualWindSpeed={manualWindSpeed}
+              manualWindDirection={manualWindDirection}
             />
 
             <div style={{ marginTop: 16 }}>

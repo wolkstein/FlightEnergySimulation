@@ -37,6 +37,10 @@ interface WaypointMapProps {
   showWindVectors?: boolean;
   missionStartTime?: string;
   flightDuration?: number;
+  // Manual Wind Parameters
+  manualWindEnabled?: boolean;
+  manualWindSpeed?: number;
+  manualWindDirection?: number;
 }
 
 // WindVector Layer Komponente
@@ -45,7 +49,11 @@ const WindVectorLayer: React.FC<{
   showWindVectors: boolean;
   missionStartTime?: string;
   flightDuration?: number;
-}> = ({ waypoints, showWindVectors, missionStartTime, flightDuration }) => {
+  // Manual Wind Parameters
+  manualWindEnabled?: boolean;
+  manualWindSpeed?: number;
+  manualWindDirection?: number;
+}> = ({ waypoints, showWindVectors, missionStartTime, flightDuration, manualWindEnabled, manualWindSpeed, manualWindDirection }) => {
   const [windVectors, setWindVectors] = useState<WindVector[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -58,6 +66,22 @@ const WindVectorLayer: React.FC<{
     const loadWindData = async () => {
       setLoading(true);
       try {
+        // Manueller Wind - erstelle Wind-Vektoren für jeden Waypoint
+        if (manualWindEnabled && manualWindSpeed !== undefined && manualWindDirection !== undefined) {
+          console.log('Using manual wind:', { manualWindSpeed, manualWindDirection });
+          const manualWindVectors: WindVector[] = waypoints.map(waypoint => ({
+            latitude: waypoint.latitude,
+            longitude: waypoint.longitude,
+            wind_speed_ms: manualWindSpeed,
+            wind_direction_deg: manualWindDirection,
+            timestamp: new Date().toISOString()
+          }));
+          setWindVectors(manualWindVectors);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback auf API-Wind-Daten
         const response = await fetch('/api/wind/route', {
           method: 'POST',
           headers: {
@@ -93,7 +117,7 @@ const WindVectorLayer: React.FC<{
     };
 
     loadWindData();
-  }, [waypoints, showWindVectors, missionStartTime, flightDuration]);
+  }, [waypoints, showWindVectors, missionStartTime, flightDuration, manualWindEnabled, manualWindSpeed, manualWindDirection]);
 
   return (
     <SimpleWindVector 
@@ -161,7 +185,10 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
   height = '600px',
   showWindVectors = false,
   missionStartTime,
-  flightDuration
+  flightDuration,
+  manualWindEnabled,
+  manualWindSpeed,
+  manualWindDirection
 }) => {
   const mapRef = useRef<any>(null);
 
@@ -290,6 +317,9 @@ const WaypointMap: React.FC<WaypointMapProps> = ({
           showWindVectors={showWindVectors}
           missionStartTime={missionStartTime}
           flightDuration={flightDuration}
+          manualWindEnabled={manualWindEnabled}
+          manualWindSpeed={manualWindSpeed}
+          manualWindDirection={manualWindDirection}
         />
       </MapContainer>
       
