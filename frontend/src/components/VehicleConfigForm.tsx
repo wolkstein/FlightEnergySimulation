@@ -26,23 +26,23 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
 
   // Info-Tooltips für verschiedene Parameter
   const infoTooltips = {
-    mass: "Gesamtmasse des Fahrzeugs inkl. Batterie und Nutzlast. Typisch: Multirotor 1-5kg, VTOL 2-10kg, Plane 1-8kg",
-    max_power: "Maximale elektrische Leistung aller Motoren zusammen. Typisch: Multirotor 500-2000W, VTOL 800-3000W, Plane 300-1500W",
-    hover_power: "Leistung zum Schweben (nur für Multirotor/VTOL). Typisch: 50-70% der Maximaleistung",
+    mass: "Gesamtmasse des Fahrzeugs inkl. Batterie und Nutzlast. Typisch: Multirotor 1-30kg, VTOL 2-30kg, Plane 1-30kg",
+    max_power: "Maximale elektrische Leistung aller Motoren zusammen. Typisch: Multirotor 500-40000W, VTOL 800-40000W, Plane 300-8000W",
+    hover_power: "Leistung zum Schweben (nur für Multirotor/VTOL). Typisch: 25-55% der Maximaleistung",
     cruise_power: "Leistung im Reiseflug (für VTOL/Plane). Typisch: 20-40% der Maximaleistung",
-    forward_thrust_power: "Leistung des Vortriebsmotors (nur für VTOL). Separat von Hover-Motoren. Typisch: 300-1200W",
-    cruise_speed: "Normale Reisegeschwindigkeit für optimalen Energieverbrauch. Typisch: Multirotor 8-15m/s, VTOL 12-25m/s, Plane 15-35m/s",
+    forward_thrust_power: "Leistung des Vortriebsmotors (nur für VTOL). Separat von Hover-Motoren. Typisch: 300-6000W",
+    cruise_speed: "Normale Reisegeschwindigkeit für optimalen Energieverbrauch. Typisch: Multirotor 8-17m/s, VTOL 12-33m/s, Plane 15-35m/s",
     max_speed: "Maximale Fluggeschwindigkeit. Typisch: Multirotor 10-25m/s, VTOL 15-40m/s, Plane 20-50m/s",
     max_climb_rate: "Maximale Steiggeschwindigkeit. Typisch: 2-10m/s je nach Fahrzeugtyp und Leistung",
     max_descent_speed: "Maximale Sinkgeschwindigkeit (kontrolliert). Typisch: 2-8m/s, meist etwas geringer als Steigrate",
     horizontal_acceleration: "Horizontale Beschleunigung/Verzögerung. Typisch: Multirotor 2-8m/s², VTOL 1-5m/s², Plane 1-4m/s²",
     vertical_acceleration: "Vertikale Beschleunigung beim Steigen/Sinken. Typisch: 1-5m/s² je nach Leistungsüberschuss",
     stall_speed: "Mindestfluggeschwindigkeit (nur für Plane). Geschwindigkeit unter der das Flugzeug abschmiert. Typisch: 8-20m/s",
-    battery_capacity: "Batteriekapazität in mAh. Typisch: 5000-22000mAh je nach Fahrzeugklasse",
+    battery_capacity: "Batteriekapazität in mAh. Typisch: 5000-80000mAh je nach Fahrzeugklasse",
     battery_voltage: "Nennspannung der Batterie. Typisch: 11.1V (3S), 14.8V (4S), 22.2V (6S), 44.4V (12S)",
     drag_coefficient: "Widerstandsbeiwert (cD-Wert). Typisch: Multirotor 0.02-0.05, VTOL 0.03-0.08, Plane 0.02-0.04",
-    wing_area: "Flügelfläche in m². Typisch: VTOL 0.3-1.2m², Plane 0.2-0.8m²",
-    rotor_diameter: "Durchmesser eines Rotors in Metern. Typisch: 0.2-0.6m je nach Fahrzeuggröße",
+    wing_area: "Flügelfläche in m². Typisch: VTOL 0.3-3m², Plane 0.2-3m²",
+    rotor_diameter: "Durchmesser eines Rotors in Metern. Typisch: 0.2-0.8m je nach Fahrzeuggröße",
     frame_type: "Anzahl der Arme: Tri (3), Quad (4), Hexa (6), Octo (8). Bestimmt Motoranzahl und Redundanz",
     motor_config: "Single: Ein Motor pro Arm. Coaxial: Zwei gegenläufige Motoren pro Arm für mehr Schub",
     vtol_config: "VTOL Konfiguration: Quad-Plane (feste Hover-Motoren + Vortrieb), Tilt-Rotor (Motoren kippen)",
@@ -98,7 +98,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.max_power}
               onChange={(value) => handleFieldChange('max_power', value || 0)}
               min={100}
-              max={5000}
+              max={40000}
               step={50}
               style={{ width: '100%' }}
             />
@@ -112,7 +112,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
                 value={config.hover_power}
                 onChange={(value) => handleFieldChange('hover_power', value || 0)}
                 min={50}
-                max={2000}
+                max={10000}
                 step={25}
                 style={{ width: '100%' }}
               />
@@ -127,7 +127,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
                 value={config.cruise_power}
                 onChange={(value) => handleFieldChange('cruise_power', value || 0)}
                 min={50}
-                max={1500}
+                max={10000}
                 step={25}
                 style={{ width: '100%' }}
               />
@@ -142,7 +142,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
                 value={config.forward_thrust_power}
                 onChange={(value) => handleFieldChange('forward_thrust_power', value || 0)}
                 min={100}
-                max={1500}
+                max={10000}
                 step={25}
                 style={{ width: '100%' }}
               />
@@ -156,7 +156,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.cruise_speed}
               onChange={(value) => handleFieldChange('cruise_speed', value || 0)}
               min={3}
-              max={40}
+              max={60}
               step={1}
               style={{ width: '100%' }}
             />
@@ -169,7 +169,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.max_speed}
               onChange={(value) => handleFieldChange('max_speed', value || 0)}
               min={5}
-              max={50}
+              max={100}
               step={1}
               style={{ width: '100%' }}
             />
@@ -182,7 +182,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.max_climb_rate}
               onChange={(value) => handleFieldChange('max_climb_rate', value || 0)}
               min={1}
-              max={20}
+              max={40}
               step={0.5}
               style={{ width: '100%' }}
             />
@@ -234,7 +234,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.battery_capacity}
               onChange={(value) => handleFieldChange('battery_capacity', value || 0)}
               min={1000}
-              max={50000}
+              max={500000}
               step={100}
               style={{ width: '100%' }}
             />
@@ -247,7 +247,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
               value={config.battery_voltage}
               onChange={(value) => handleFieldChange('battery_voltage', value || 0)}
               min={12}
-              max={50}
+              max={150}
               step={0.1}
               style={{ width: '100%' }}
             />
@@ -261,7 +261,7 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
                 value={config.stall_speed}
                 onChange={(value) => handleFieldChange('stall_speed', value || 0)}
                 min={8}
-                max={25}
+                max={35}
                 step={0.5}
                 style={{ width: '100%' }}
               />

@@ -81,20 +81,20 @@ async def get_vehicles():
             "description": "Multirotor-Fahrzeuge (Tri/Quad/Hexa/Octo)",
             "default_params": {
                 "vehicle_type": "multirotor",
-                "mass": 2.5,  # kg
-                "max_power": 1000,  # W
-                "hover_power": 400,  # W
-                "cruise_speed": 12,  # m/s
-                "max_speed": 15,  # m/s
-                "max_climb_rate": 5,  # m/s
-                "max_descent_speed": 4,  # m/s
+                "mass": 25,  # kg
+                "max_power": 10000,  # W
+                "hover_power": 4250,  # W
+                "cruise_speed": 15,  # m/s
+                "max_speed": 17.5,  # m/s
+                "max_climb_rate": 6,  # m/s
+                "max_descent_speed": 2.5,  # m/s
                 "horizontal_acceleration": 4.0,  # m/s²
                 "vertical_acceleration": 3.0,  # m/s²
-                "battery_capacity": 5000,  # mAh
-                "battery_voltage": 22.2,  # V
+                "battery_capacity": 66000,  # mAh
+                "battery_voltage": 47.8,  # V
                 "frame_type": "quad",
-                "motor_config": "single",
-                "rotor_diameter": 0.3,  # m
+                "motor_config": "coaxial",  # Coaxial für bessere Leistung
+                "rotor_diameter": 0.7,  # m
                 "drag_coefficient": 0.03
             }
         },
