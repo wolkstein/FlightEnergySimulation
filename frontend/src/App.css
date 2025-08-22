@@ -94,20 +94,38 @@
   .results-summary {
     padding: 15px;
     margin-bottom: 15px;
+    box-shadow: none;
+    border: 1px solid #f0f0f0;
   }
   
   .energy-chart-container {
     padding: 15px;
+    box-shadow: none;
+    border: 1px solid #f0f0f0;
   }
   
   .simulation-form {
     padding: 16px;
+    box-shadow: none;
+    border: 1px solid #f0f0f0;
+  }
+  
+  .ant-layout-content > div {
+    box-shadow: none !important;
+    border: 1px solid #f0f0f0 !important;
+  }
+  
+  .ant-card {
+    box-shadow: none !important;
+    border: 1px solid #f0f0f0 !important;
   }
   
   .ant-layout-header {
     height: auto !important;
     line-height: normal !important;
     padding: 10px 16px !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    box-shadow: none !important;
   }
   
   .ant-layout-header .ant-typography {
@@ -123,10 +141,6 @@
     margin-bottom: 12px !important;
   }
   
-  .ant-card {
-    margin-bottom: 12px;
-  }
-  
   .ant-table-wrapper {
     overflow-x: auto;
   }
@@ -135,6 +149,8 @@
 @media (max-width: 480px) {
   .simulation-form {
     padding: 12px;
+    box-shadow: none;
+    border: 1px solid #f0f0f0;
   }
   
   .ant-layout-header .ant-typography {
@@ -144,10 +160,13 @@
   .ant-btn {
     font-size: 12px;
     height: 32px;
+    box-shadow: none !important;
   }
   
   .leaflet-container {
     height: 250px;
+    border: 1px solid #f0f0f0;
+    box-shadow: none;
   }
   
   .ant-form-item-label {
@@ -156,5 +175,17 @@
   
   .ant-input, .ant-select-selector {
     font-size: 14px;
+    box-shadow: none !important;
+  }
+  
+  .ant-card {
+    box-shadow: none !important;
+    border: 1px solid #f0f0f0 !important;
+    margin-bottom: 8px;
+  }
+  
+  .results-summary, .energy-chart-container {
+    box-shadow: none !important;
+    border: 1px solid #f0f0f0 !important;
   }
 }

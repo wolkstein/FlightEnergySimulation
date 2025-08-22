@@ -216,7 +216,9 @@ const App: React.FC = () => {
             padding: isMobile ? 12 : 24, 
             background: '#fff', 
             minHeight: 360,
-            borderRadius: '8px'
+            borderRadius: isMobile ? '4px' : '8px',
+            boxShadow: isMobile ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+            border: isMobile ? '1px solid #f0f0f0' : 'none'
           }}>
             {renderContent()}
           </div>
