@@ -78,6 +78,12 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
   - "Gentle" Tuning: 10% max. Effizienzgewinn (statt 35% - validiert durch Logfiles)
   - Geschwindigkeitsabhängige Drag-Koeffizienten
   - **Validierung:** QGroundControl-Übereinstimmung (±1% Flugzeit, <1% Distanz)
+- **Sweet Spot Analysis GUI:** Interaktive Kurven-Visualisierung
+  - Separater Tab für aerodynamische Analyse
+  - Backend vs. Glauert Momentum Theory Vergleich
+  - Real-time Power-Kurven bei unterschiedlichen Geschwindigkeiten
+  - Massenabhängige Sweet Spot Bereiche (visuell hervorgehoben)
+  - Touch-optimierte Bedienung für Tablets
 - **Realistische Reichweitenschätzung:** Reduzierte Überschätzung von ~65km auf ~46km
 - **Batterieverwaltung:** 75% = praktisch leer (sichere 25% Reserve)
 - **Multi-Phase:** Takeoff, Cruise, Landing phases
@@ -115,7 +121,9 @@ cd frontend && npm test
 - `frontend/src/components/WaypointMap.tsx` - Hauptkartenkomponente
 - `frontend/src/components/VehicleConfigForm.tsx` - Parameter-Formulare mit Info-Buttons
 - `frontend/src/components/SimpleWindVector.tsx` - Wind-Visualisierung
-- `backend/services/energy_calculator.py` - Physik-Engine
+- `frontend/src/components/SweetSpotAnalysis.tsx` - Sweet Spot Kurven-Visualisierung
+- `backend/services/energy_calculator.py` - Physik-Engine mit "Gentle" Tuning
+- `backend/services/glauert_analyzer.py` - Glauert Momentum Theory Implementierung
 - `backend/services/wind_service.py` - Wind-Datenquellen
 
 ## 🎯 Nächste Entwicklungsziele
@@ -281,8 +289,10 @@ Nächstes: [siehe Development Goals]
 - Diese `DEVELOPMENT_NOTES.md` - Vollständiger Projektkontext
 - `README.md` - Feature-Überblick  
 - `QUICKSTART.md` - Installation & Setup
-- `frontend/src/components/` - UI-Komponenten
+- `frontend/src/components/` - UI-Komponenten (inkl. Sweet Spot Analysis)
+- `frontend/src/components/SweetSpotAnalysis.tsx` - Aerodynamik-Visualisierung
 - `backend/services/energy_calculator.py` - Aerodynamik-Engine mit "Gentle" Sweet Spot Tuning
+- `backend/services/glauert_analyzer.py` - Glauert Momentum Theory für Vergleichsanalysen
 - `backend/services/wind_service.py` - Wind-Datenquellen
 - `backend_tuning.py` - Parameter-Optimierung und Validierung gegen Logfiles
 
