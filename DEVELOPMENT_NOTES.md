@@ -39,6 +39,19 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 - **Route Visualization:** Blaue Polyline zwischen Waypoints
 - **Auto-Centering:** Automatisches Zoomen auf alle Waypoints
 - **Touch-optimiert:** Mobile-friendly Bedienung
+- **Custom Waypoint Icons:** Blaue Kreise mit Drag & Drop Funktionalität
+- **Interactive Popups:** Waypoint-Info mit Position und "Entfernen" Button
+
+### 🎨 Modern CSS Architecture (August 2025)
+- **CSS Custom Properties System:** Zentrale Größen-Definitionen in :root
+- **Responsive Design:** Automatische Anpassung für Desktop/Tablet/Mobile
+- **Variable-based Sizing:** 
+  - Container: 1400px max-width für Desktop
+  - Maps: 800px Desktop, 500px Mobile, 350px Small-Mobile
+  - Charts: Große (600px), Medium (400px), Small (300px) Varianten
+- **Utility Classes:** .full-width, .container-centered, .chart-container-*
+- **No Inline Styles:** Vollständige Ablösung von style={{}} durch CSS-Klassen
+- **Live-Testing:** Browser Dev Tools CSS Variable Manipulation möglich
 
 ### 🌪️ Wind-Visualisierung & Manual Override
 - **Colored Wind Arrows:** Geschwindigkeits-basierte Farbkodierung
@@ -118,10 +131,12 @@ cd frontend && npm test
 ```
 
 ### Wichtige Dateien
-- `frontend/src/components/WaypointMap.tsx` - Hauptkartenkomponente
+- `frontend/src/components/WaypointMap.tsx` - Hauptkartenkomponente mit Drag & Drop
 - `frontend/src/components/VehicleConfigForm.tsx` - Parameter-Formulare mit Info-Buttons
 - `frontend/src/components/SimpleWindVector.tsx` - Wind-Visualisierung
 - `frontend/src/components/SweetSpotAnalysis.tsx` - Sweet Spot Kurven-Visualisierung
+- `frontend/src/App.css` - **CSS Custom Properties System & Responsive Design**
+- `frontend/src/index.css` - Basis-Styles mit CSS Variables Integration
 - `backend/services/energy_calculator.py` - Physik-Engine mit "Gentle" Tuning
 - `backend/services/glauert_analyzer.py` - Glauert Momentum Theory Implementierung
 - `backend/services/wind_service.py` - Wind-Datenquellen
@@ -136,7 +151,8 @@ cd frontend && npm test
 - [x] **"Gentle" Backend Parameter Tuning** - Logfile-validierte Realismus-Optimierung ✅ 22.08.2025
 - [x] **State-Persistierung Fix** - Fahrzeugkonfiguration & Wegpunkte bleiben nach Simulation erhalten ✅ 22.08.2025
 - [x] **Manual Wind Arrow Display Fix** - Manuelle Windpfeile werden korrekt auf Karte angezeigt ✅ 22.08.2025
-- [x] **Mobile Responsiveness** - Responsive Layout für Tablets/Phones mit collapsible Sidebar ✅ 22.08.2025
+- [x] **CSS Architecture Modernization** - CSS Custom Properties System mit responsive Design ✅ 23.08.2025
+- [x] **Waypoint Drag & Drop Restore** - Wiederherstellung der Drag-Funktionalität nach UI-Updates ✅ 23.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -334,6 +350,6 @@ Nächstes: [siehe Development Goals]
 
 ---
 
-**Letzte Aktualisierung:** 22. August 2025  
+**Letzte Aktualisierung:** 23. August 2025  
 **Entwickler:** wolkstein  
-**Version:** 1.2 - "Gentle" Backend Tuning mit Logfile-Validierung & QGroundControl-Übereinstimmung
+**Version:** 1.3 - CSS Architecture Modernization & Waypoint Drag & Drop Restoration
