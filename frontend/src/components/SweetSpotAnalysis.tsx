@@ -103,7 +103,7 @@ const SweetSpotAnalysis: React.FC<SweetSpotAnalysisProps> = ({
           piRatio = 1 - 0.4 * mu - 0.1 * mu * mu;
         } else {
           // Standard Glauert: Pi/Pi0 = sqrt(1 + μ²) - μ 
-          piRatio = Math.sqrt(1 + mu * mu) - mu/1.5;
+          piRatio = Math.sqrt(1 + mu * mu) - mu / 1.5;
         }
         
         const hoverInducedPowerIdeal = (hoverInducedPowerPerRotor * rotorCount) / coaxialEfficiency;
@@ -112,7 +112,7 @@ const SweetSpotAnalysis: React.FC<SweetSpotAnalysisProps> = ({
         
         // Profile power (moderater für balance mit reduzierter parasitärer Power)
         const tipSpeed = Math.sqrt(thrustPerRotor / (airDensity * diskArea)) * 8; // Reduziert von 10 auf 8
-        const profileDragCoeff = 0.020; // Leicht reduziert von 0.025 auf 0.020
+        const profileDragCoeff = 0.025; // Leicht reduziert von 0.025 auf 0.020
         const solidityRatio = 0.10; // Leicht reduziert von 0.12 auf 0.10
         
         // Profile power increases with forward speed - SANFTERER ANSTIEG
