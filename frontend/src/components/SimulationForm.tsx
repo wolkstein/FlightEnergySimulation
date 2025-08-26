@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import {
   Form,
   Select,
@@ -34,6 +34,25 @@ interface SimulationFormProps {
   setPersistentVehicleConfig: (config: VehicleConfig | null) => void;
   persistentWaypoints: Waypoint[];
   setPersistentWaypoints: (waypoints: Waypoint[]) => void;
+  // Wind-Settings als Props für State-Persistierung
+  persistentWindSettings: {
+    windConsideration: boolean;
+    showWindVectors: boolean;
+    manualWindEnabled: boolean;
+    manualWindSpeed: number;
+    manualWindDirection: number;
+    missionStartTime: string;
+    flightDuration: number;
+  };
+  setPersistentWindSettings: Dispatch<SetStateAction<{
+    windConsideration: boolean;
+    showWindVectors: boolean;
+    manualWindEnabled: boolean;
+    manualWindSpeed: number;
+    manualWindDirection: number;
+    missionStartTime: string;
+    flightDuration: number;
+  }>>;
 }
 
 const SimulationForm: React.FC<SimulationFormProps> = ({
@@ -45,6 +64,8 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   setPersistentVehicleConfig,
   persistentWaypoints,
   setPersistentWaypoints,
+  persistentWindSettings,
+  setPersistentWindSettings,
 }) => {
   const [form] = Form.useForm();
   const [vehicleTypes, setVehicleTypes] = useState<VehicleInfo[]>([]);
@@ -54,15 +75,30 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const vehicleConfig = persistentVehicleConfig;
   const waypoints = persistentWaypoints;
   
-  const [windConsideration, setWindConsideration] = useState(true);
+  // Wind-Settings aus persistenten Props verwenden statt lokaler State
+  const windConsideration = persistentWindSettings.windConsideration;
+  const showWindVectors = persistentWindSettings.showWindVectors;
+  const manualWindEnabled = persistentWindSettings.manualWindEnabled;
+  const manualWindSpeed = persistentWindSettings.manualWindSpeed;
+  const manualWindDirection = persistentWindSettings.manualWindDirection;
+  const missionStartTime = persistentWindSettings.missionStartTime;
+  const flightDuration = persistentWindSettings.flightDuration;
+  
+  // Helper-Funktionen für Wind-Settings Updates mit funktionalem State-Update
+  const updateWindSetting = (key: keyof typeof persistentWindSettings, value: any) => {
+    console.log(`DEBUG: Updating ${key} to ${value}`); // Debug-Log
+    // Verwende funktionales Update um sicherzustellen, dass wir den aktuellsten State bekommen
+    setPersistentWindSettings(currentSettings => {
+      console.log(`DEBUG: Current settings for ${key}:`, currentSettings[key], '-> New value:', value);
+      const newSettings = { ...currentSettings };
+      (newSettings as any)[key] = value;
+      console.log(`DEBUG: New settings:`, newSettings);
+      return newSettings;
+    });
+  };
+  
+  // Lokale UI States (nicht persistent)
   const [showMissionImport, setShowMissionImport] = useState(false);
-  const [showWindVectors, setShowWindVectors] = useState(false);
-  const [missionStartTime, setMissionStartTime] = useState<string>('');
-  const [flightDuration, setFlightDuration] = useState<number>(1.0);
-  // Manueller Wind für Feldtests
-  const [manualWindEnabled, setManualWindEnabled] = useState(false);
-  const [manualWindSpeed, setManualWindSpeed] = useState<number>(5.0);
-  const [manualWindDirection, setManualWindDirection] = useState<number>(270);
   
   // Tab management
   const [activeTab, setActiveTab] = useState<string>('vehicle-config');
@@ -268,7 +304,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                 <Text>Windberücksichtigung:</Text>
                 <Switch
                   checked={windConsideration}
-                  onChange={setWindConsideration}
+                  onChange={(checked) => updateWindSetting('windConsideration', checked)}
                   checkedChildren="Ein"
                   unCheckedChildren="Aus"
                 />
@@ -280,7 +316,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                     <Text>Windvektoren anzeigen:</Text>
                     <Switch
                       checked={showWindVectors}
-                      onChange={setShowWindVectors}
+                      onChange={(checked) => updateWindSetting('showWindVectors', checked)}
                       checkedChildren="Ein"
                       unCheckedChildren="Aus"
                     />
@@ -291,9 +327,9 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                     <Switch
                       checked={manualWindEnabled}
                       onChange={(checked) => {
-                        setManualWindEnabled(checked);
+                        updateWindSetting('manualWindEnabled', checked);
                         if (checked) {
-                          setShowWindVectors(true); // Automatisch Windvektoren anzeigen bei manuellem Wind
+                          updateWindSetting('showWindVectors', true); // Automatisch Windvektoren anzeigen bei manuellem Wind
                         }
                       }}
                       checkedChildren="Ein"
@@ -312,7 +348,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           max={50}
                           step={0.5}
                           value={manualWindSpeed}
-                          onChange={(value) => setManualWindSpeed(value || 0)}
+                          onChange={(value) => updateWindSetting('manualWindSpeed', value || 0)}
                           addonAfter="m/s"
                           placeholder="z.B. 5.0"
                         />
@@ -326,7 +362,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           max={359}
                           step={15}
                           value={manualWindDirection}
-                          onChange={(value) => setManualWindDirection(value || 0)}
+                          onChange={(value) => updateWindSetting('manualWindDirection', value || 0)}
                           addonAfter="°"
                           placeholder="270° = West"
                         />
@@ -345,7 +381,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           min={0}
                           max={168} // 1 Woche
                           value={missionStartTime ? parseFloat(missionStartTime) : 0}
-                          onChange={(value) => setMissionStartTime(value?.toString() || '0')}
+                          onChange={(value) => updateWindSetting('missionStartTime', value?.toString() || '0')}
                           addonAfter="h"
                         />
                       </Col>
@@ -358,7 +394,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                           max={24}
                           step={0.1}
                           value={flightDuration}
-                          onChange={(value) => setFlightDuration(value || 1.0)}
+                          onChange={(value) => updateWindSetting('flightDuration', value || 1.0)}
                           addonAfter="h"
                         />
                       </Col>

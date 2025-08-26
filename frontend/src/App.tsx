@@ -53,6 +53,17 @@ const App: React.FC = () => {
     { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München
     { latitude: 48.1451, longitude: 11.5920, altitude: 100 },
   ]);
+  
+  // Wind-Settings State auf App-Level - Fix für Wind-Settings Reset Bug
+  const [persistentWindSettings, setPersistentWindSettings] = useState({
+    windConsideration: true,
+    showWindVectors: false,
+    manualWindEnabled: false,
+    manualWindSpeed: 5.0,
+    manualWindDirection: 270,
+    missionStartTime: '',
+    flightDuration: 1.0
+  });
 
   // Responsive behavior
   useEffect(() => {
@@ -84,8 +95,18 @@ const App: React.FC = () => {
     setPersistentVehicleConfig(vehicleConfig);
     setPersistentWaypoints(waypoints);
     
-    // TODO: Wind-Einstellungen auch persistieren
-    // Diese könnten in einen weiteren State oder in den VehicleConfig integriert werden
+    // Wind-Einstellungen wiederherstellen
+    if (windSettings) {
+      setPersistentWindSettings({
+        windConsideration: windSettings.wind_consideration ?? true,
+        showWindVectors: persistentWindSettings.showWindVectors, // UI State beibehalten 
+        manualWindEnabled: windSettings.manual_wind_enabled ?? false,
+        manualWindSpeed: windSettings.manual_wind_speed_ms ?? 5.0,
+        manualWindDirection: windSettings.manual_wind_direction_deg ?? 270,
+        missionStartTime: persistentWindSettings.missionStartTime, // UI State beibehalten
+        flightDuration: persistentWindSettings.flightDuration // UI State beibehalten
+      });
+    }
     
     // Zum Simulations-Tab wechseln
     setSelectedMenu('simulation');
@@ -106,6 +127,8 @@ const App: React.FC = () => {
             setPersistentVehicleConfig={setPersistentVehicleConfig}
             persistentWaypoints={persistentWaypoints}
             setPersistentWaypoints={setPersistentWaypoints}
+            persistentWindSettings={persistentWindSettings}
+            setPersistentWindSettings={setPersistentWindSettings}
           />
         );
       case 'results':
