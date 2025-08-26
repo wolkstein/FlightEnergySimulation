@@ -254,11 +254,24 @@ async def get_wind_vectors_for_route(request: dict):
 
 @app.post("/api/sessions")
 async def create_session(name: str, description: Optional[str] = None, db=Depends(get_db)):
-    """Neue Session erstellen"""
-    session = session_service.create_empty_session(
-        db=db, name=name, description=description
-    )
-    return {"session_id": session.id, "name": session.name}
+    """Neue Session erstellen (leere Session für manuelle Erstellung)"""
+    # Erstelle eine minimale Session ohne Simulationsdaten
+    from datetime import datetime
+    
+    db_session = SessionLocal()
+    try:
+        from models.database import SimulationSession
+        session = SimulationSession(
+            name=name,
+            description=description or "Manuell erstellte Session"
+        )
+        db_session.add(session)
+        db_session.commit()
+        db_session.refresh(session)
+        
+        return {"session_id": session.id, "name": session.name}
+    finally:
+        db_session.close()
 
 @app.get("/api/sessions")
 async def get_sessions(db=Depends(get_db)):
@@ -273,6 +286,45 @@ async def get_session(session_id: int, db=Depends(get_db)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+@app.get("/api/sessions/{session_id}/restore")
+async def restore_session(session_id: int, db=Depends(get_db)):
+    """Session vollständig wiederherstellen für Simulation-Tab"""
+    try:
+        restored_data = session_service.restore_simulation_data(db, session_id)
+        return restored_data
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error restoring session: {str(e)}")
+
+@app.put("/api/sessions/{session_id}/name")
+async def update_session_name(session_id: int, request: dict, db=Depends(get_db)):
+    """Session-Namen aktualisieren"""
+    try:
+        new_name = request.get("name")
+        if not new_name or not new_name.strip():
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        
+        success = session_service.update_session_name(db, session_id, new_name.strip())
+        if success:
+            return {"success": True, "message": "Session name updated successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating session name: {str(e)}")
+
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: int, db=Depends(get_db)):
+    """Session löschen"""
+    try:
+        success = session_service.delete_session(db, session_id)
+        if success:
+            return {"success": True, "message": "Session deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting session: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

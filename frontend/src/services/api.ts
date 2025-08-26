@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { VehicleInfo, SimulationRequest, SimulationResult, SimulationSession, WindData } from '../types/simulation';
+import { VehicleInfo, SimulationRequest, SimulationResult, SimulationSession, WindData, RestoreSessionData } from '../types/simulation';
 
 // Use relative URL for Docker container with nginx proxy, fallback to localhost for development
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:8000');
@@ -70,6 +70,21 @@ export const apiService = {
 
   async getSession(sessionId: number): Promise<SimulationSession> {
     const response = await api.get(`/api/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  async restoreSession(sessionId: number): Promise<RestoreSessionData> {
+    const response = await api.get(`/api/sessions/${sessionId}/restore`);
+    return response.data;
+  },
+
+  async updateSessionName(sessionId: number, name: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.put(`/api/sessions/${sessionId}/name`, { name });
+    return response.data;
+  },
+
+  async deleteSession(sessionId: number): Promise<{ success: boolean; message: string }> {
+    const response = await api.delete(`/api/sessions/${sessionId}`);
     return response.data;
   },
 

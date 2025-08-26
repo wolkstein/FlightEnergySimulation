@@ -124,5 +124,33 @@ export interface SimulationSession {
   total_energy_wh?: number;
   total_distance_m?: number;
   total_time_s?: number;
-  simulation_data?: string;
+  battery_usage_percent?: number;
+  vehicle_config?: VehicleConfig;
+  waypoints?: Waypoint[];
+  wind_settings?: {
+    wind_consideration: boolean;
+    manual_wind_enabled?: boolean;
+    manual_wind_speed_ms?: number;
+    manual_wind_direction_deg?: number;
+  };
+  simulation_result?: SimulationResult;
+}
+
+export interface RestoreSessionData {
+  vehicle_config: VehicleConfig;
+  waypoints: Waypoint[];
+  wind_settings: {
+    wind_consideration: boolean;
+    manual_wind_enabled?: boolean;
+    manual_wind_speed_ms?: number;
+    manual_wind_direction_deg?: number;
+  };
+  simulation_result: SimulationResult;
+  session_info: {
+    id: number;
+    name: string;
+    description?: string;
+    created_at: string;
+    vehicle_type: VehicleType;
+  };
 }

@@ -79,6 +79,20 @@ const App: React.FC = () => {
     message.error(`Simulation fehlgeschlagen: ${error}`);
   };
 
+  const handleRestoreSession = (vehicleConfig: VehicleConfig, waypoints: Waypoint[], windSettings: any) => {
+    // Persistent State aktualisieren
+    setPersistentVehicleConfig(vehicleConfig);
+    setPersistentWaypoints(waypoints);
+    
+    // TODO: Wind-Einstellungen auch persistieren
+    // Diese könnten in einen weiteren State oder in den VehicleConfig integriert werden
+    
+    // Zum Simulations-Tab wechseln
+    setSelectedMenu('simulation');
+    
+    message.success('Session erfolgreich wiederhergestellt!');
+  };
+
   const renderContent = () => {
     switch (selectedMenu) {
       case 'simulation':
@@ -105,7 +119,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'history':
-        return <SessionHistory />;
+        return <SessionHistory onRestoreSession={handleRestoreSession} />;
       case 'settings':
         return (
           <div className="content-centered">

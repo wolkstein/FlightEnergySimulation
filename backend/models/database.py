@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.sql import func
 import os
 
@@ -30,4 +30,44 @@ class SimulationSession(Base):
     total_energy_wh = Column(Float)
     total_distance_m = Column(Float)
     total_time_s = Column(Float)
-    simulation_data = Column(Text)  # JSON string
+    battery_usage_percent = Column(Float)
+    
+    # Erweiterte Daten als JSON
+    vehicle_config = Column(JSON)  # VehicleConfig als JSON
+    waypoints = Column(JSON)       # Waypoint-Liste als JSON
+    wind_settings = Column(JSON)   # Wind-Einstellungen als JSON
+    simulation_result = Column(JSON)  # Vollständiges SimulationResult als JSON
+    
+    # Relation zu Flight Segments für detaillierte Abfrage
+    flight_segments = relationship("FlightSegment", back_populates="session", cascade="all, delete-orphan")
+
+
+class FlightSegment(Base):
+    __tablename__ = "flight_segments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("simulation_sessions.id"))
+    segment_id = Column(Integer)
+    
+    # Waypoint Daten
+    start_latitude = Column(Float)
+    start_longitude = Column(Float) 
+    start_altitude = Column(Float)
+    end_latitude = Column(Float)
+    end_longitude = Column(Float)
+    end_altitude = Column(Float)
+    
+    # Segment Metriken
+    distance_m = Column(Float)
+    duration_s = Column(Float)
+    energy_wh = Column(Float)
+    average_speed_ms = Column(Float)
+    average_power_w = Column(Float)
+    
+    # Wind Influence Daten
+    headwind_ms = Column(Float)
+    crosswind_ms = Column(Float)
+    updraft_ms = Column(Float)
+    total_wind_speed = Column(Float)
+    
+    session = relationship("SimulationSession", back_populates="flight_segments")

@@ -74,3 +74,8 @@ real_missions/*
 # Temporary files
 *.tmp
 *.temp
+
+# Uml files
+uml/*.png
+uml/*.svg
+uml/*.yuml
