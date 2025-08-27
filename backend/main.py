@@ -29,9 +29,13 @@ from models.database import engine, SessionLocal, Base
 from models.vehicles import VehicleType, VehicleConfig
 from models.simulation import SimulationRequest, SimulationResult
 from models.waypoint import Waypoint, WaypointPlan
+from models.user import User
 from services.energy_calculator import EnergyCalculator
 from services.wind_service import WindService
 from services.session_service import SessionService
+from services.auth_service import get_current_active_user, get_db
+from routes.auth_routes import router as auth_router
+from routes.group_routes import router as group_router
 
 # Load environment variables
 load_dotenv()
@@ -44,6 +48,10 @@ app = FastAPI(
     description="API für die Simulation des Energieverbrauchs von Flugzeugen",
     version="1.0.0"
 )
+
+# Include routers
+app.include_router(auth_router)
+app.include_router(group_router)
 
 # CORS middleware
 app.add_middleware(
@@ -150,7 +158,11 @@ async def get_vehicles():
     ]
 
 @app.post("/api/simulation", response_model=SimulationResult)
-async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
+async def run_simulation(
+    request: SimulationRequest, 
+    db=Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Energiesimulation durchführen"""
     try:
         print(f"DEBUG: Request received: {type(request)}")
@@ -195,7 +207,8 @@ async def run_simulation(request: SimulationRequest, db=Depends(get_db)):
         session = session_service.create_session(
             db=db,
             simulation_request=request,
-            simulation_result=result
+            simulation_result=result,
+            owner_id=current_user.id
         )
         
         result.session_id = session.id
@@ -253,7 +266,12 @@ async def get_wind_vectors_for_route(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/sessions")
-async def create_session(name: str, description: Optional[str] = None, db=Depends(get_db)):
+async def create_session(
+    name: str, 
+    description: Optional[str] = None, 
+    db=Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Neue Session erstellen (leere Session für manuelle Erstellung)"""
     # Erstelle eine minimale Session ohne Simulationsdaten
     from datetime import datetime
@@ -263,7 +281,8 @@ async def create_session(name: str, description: Optional[str] = None, db=Depend
         from models.database import SimulationSession
         session = SimulationSession(
             name=name,
-            description=description or "Manuell erstellte Session"
+            description=description or "Manuell erstellte Session",
+            owner_id=current_user.id
         )
         db_session.add(session)
         db_session.commit()
@@ -274,14 +293,48 @@ async def create_session(name: str, description: Optional[str] = None, db=Depend
         db_session.close()
 
 @app.get("/api/sessions")
-async def get_sessions(db=Depends(get_db)):
-    """Alle Sessions abrufen"""
-    sessions = session_service.get_all_sessions(db)
-    return sessions
+async def get_sessions(
+    db=Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Alle Sessions abrufen (nur eigene und Gruppen-Sessions)"""
+    from services.group_service import can_access_session
+    
+    all_sessions = session_service.get_all_sessions(db)
+    # Filter sessions based on user access
+    accessible_sessions = []
+    for session in all_sessions:
+        # SQLAlchemy objects - use direct attribute access
+        if session.owner_id == current_user.id or can_access_session(db, session.id, current_user):
+            # Convert to dict for JSON response
+            session_dict = {
+                "id": session.id,
+                "name": session.name,
+                "description": session.description,
+                "vehicle_type": session.vehicle_type,
+                "total_energy_wh": session.total_energy_wh,
+                "total_distance_m": session.total_distance_m,
+                "total_time_s": session.total_time_s,
+                "battery_usage_percent": session.battery_usage_percent,
+                "created_at": session.created_at.isoformat() if session.created_at else None,
+                "owner_id": session.owner_id
+            }
+            accessible_sessions.append(session_dict)
+    
+    return accessible_sessions
 
 @app.get("/api/sessions/{session_id}")
-async def get_session(session_id: int, db=Depends(get_db)):
+async def get_session(
+    session_id: int, 
+    db=Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Spezifische Session abrufen"""
+    from services.group_service import can_access_session
+    
+    if not can_access_session(db, session_id, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     session = session_service.get_session(db, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")

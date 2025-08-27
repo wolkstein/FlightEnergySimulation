@@ -106,6 +106,17 @@ Interactive web-based flight energy simulation for drones with real-time wind ve
 - **Automatic Waypoint Extraction:** GPS-Koordinaten und Höhen
 - **Map Centering:** Auto-Zoom auf importierte Mission
 
+### 🔐 Benutzerauthentifizierung & Session Management (August 2025)
+- **Client-Side Password Hashing:** SHA-256 mit benutzerbasiertem Salt
+  - Keine Klartext-Passwörter über das Netzwerk übertragen
+  - Sichere Implementierung mit crypto-js
+- **JWT-basierte Authentifizierung:** 30-Tage Sessions für einfache Entwicklung
+- **Session Ownership:** Simulationssessions werden automatisch Benutzern zugeordnet
+- **Gruppen-System:** Benutzer können Gruppen erstellen und Sessions teilen
+- **PostgreSQL Integration:** Robuste Datenbank mit Benutzer- und Sessionverwaltung
+- **Docker Volume Persistenz:** Daten überleben Container-Neustarts
+- **Development Reset:** `docker-compose down -v` für kompletten Datenbank-Reset
+
 ## 🛠️ Entwicklungsumgebung
 
 ### Lokale Entwicklung
@@ -135,11 +146,15 @@ cd frontend && npm test
 - `frontend/src/components/VehicleConfigForm.tsx` - Parameter-Formulare mit Info-Buttons
 - `frontend/src/components/SimpleWindVector.tsx` - Wind-Visualisierung
 - `frontend/src/components/SweetSpotAnalysis.tsx` - Sweet Spot Kurven-Visualisierung
+- `frontend/src/components/AuthModal.tsx` - Login/Register Modal mit Client-Side Hashing
+- `frontend/src/utils/passwordHash.ts` - SHA-256 Password Hashing Utility
 - `frontend/src/App.css` - **CSS Custom Properties System & Responsive Design**
 - `frontend/src/index.css` - Basis-Styles mit CSS Variables Integration
 - `backend/services/energy_calculator.py` - Physik-Engine mit "Gentle" Tuning
 - `backend/services/glauert_analyzer.py` - Glauert Momentum Theory Implementierung
 - `backend/services/wind_service.py` - Wind-Datenquellen
+- `backend/services/auth_service.py` - JWT-basierte Authentifizierung mit Client-Hash Support
+- `backend/models/user.py` - Benutzer- und Gruppen-Datenmodelle
 
 ## 🎯 Nächste Entwicklungsziele
 
@@ -155,6 +170,8 @@ cd frontend && npm test
 - [x] **Waypoint Drag & Drop Restore** - Wiederherstellung der Drag-Funktionalität nach UI-Updates ✅ 23.08.2025
 - [x] **Enhanced Results Visualization** - Timeline-basierte Charts mit Airspeed/Ground Speed & Wind-Impact ✅ 25.08.2025
 - [x] **Wind Direction Display Fix** - Gegenwind-Vorzeichen korrigiert für intuitive Anzeige ✅ 27.08.2025
+- [x] **Client-Side Password Hashing** - SHA-256 mit Salt, keine Klartext-Übertragung ✅ 27.08.2025
+- [x] **User Authentication System** - JWT-basierte Sessions mit PostgreSQL Backend ✅ 27.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
@@ -328,14 +345,16 @@ cd backend && pip install -r requirements-dev.txt --upgrade
 
 ## 🤝 Für neue Copilot Sessions
 
-### Schneller Kontext-Transfer
+### Für neue Copilot Sessions
 ```
 Projekt: Flight Energy Simulation (React/FastAPI/Docker)
 GitHub: https://github.com/wolkstein/FlightEnergySimulation
 Status: Produktiv mit QGroundControl-validierter Realismus (±1% Genauigkeit)
-Aktuell: "Gentle" Parameter Tuning - Logfile-validierte Sweet Spot Optimierung (Aug 2025)
-Features: Manual Wind Override, Airspeed-basierte Aerodynamik, realistische Reichweiten
+Aktuell: Client-Side Password Hashing System implementiert (Aug 2025)
+Features: Manual Wind Override, Airspeed-basierte Aerodynamik, User Auth mit SHA-256 Hashing
 Validierung: 38.9min Flugzeit, 34.9km Distanz, 46.5km Reichweite - stimmt mit QGC überein
+Auth-System: JWT-basierte Sessions, PostgreSQL, Docker Volume Persistenz
+Sicherheit: Keine Klartext-Passwörter über Netzwerk, client-side SHA-256 + Salt
 Nächstes: [siehe Development Goals]
 ```
 
@@ -352,6 +371,6 @@ Nächstes: [siehe Development Goals]
 
 ---
 
-**Letzte Aktualisierung:** 23. August 2025  
+**Letzte Aktualisierung:** 27. August 2025  
 **Entwickler:** wolkstein  
-**Version:** 1.3 - CSS Architecture Modernization & Waypoint Drag & Drop Restoration
+**Version:** 1.4 - Client-Side Password Hashing & User Authentication System

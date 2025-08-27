@@ -122,6 +122,42 @@ npm start
 - `GET /api/sessions` - Alle Sessions abrufen
 - `GET /api/sessions/{id}` - Spezifische Session abrufen
 
+## Benutzerauthentifizierung & Datenbank 🔐
+
+### Authentifizierung (seit August 2025):
+- **Client-Side Hashing**: Passwörter werden im Browser gehasht, bevor sie übertragen werden
+  - SHA-256 mit benutzernamem-spezifischem Salt
+  - Keine Klartext-Passwörter über das Netzwerk
+  - Sichere JWT-Token-basierte Authentifizierung
+- **Session Ownership**: Simulationssessions werden automatisch Benutzern zugeordnet
+- **Gruppen-System**: Benutzer können Gruppen erstellen und Sessions teilen
+- **PostgreSQL Integration**: Robuste Datenbank mit Benutzer- und Sessionverwaltung
+
+### Datenbank-Persistenz:
+- **Persistent Data**: PostgreSQL Daten überleben Container-Neustarts durch Docker Volumes
+- **Volume Name**: `postgres_data` (siehe docker-compose.yml)
+- **Datenbank Reset**: Für Tests/Development mit `docker-compose down -v`
+
+### API Endpoints (Authentifizierung):
+```bash
+POST /auth/register    # Benutzerregistrierung (client-hashed password)
+POST /auth/login       # Login (client-hashed password) 
+GET /auth/me           # Aktuelle Benutzerinformationen
+POST /groups           # Neue Gruppe erstellen
+GET /groups            # Benutzergruppen abrufen
+POST /groups/{id}/join # Gruppe beitreten
+```
+
+### Entwicklung & Reset:
+```bash
+# Kompletter Reset (alle Daten löschen)
+docker-compose down -v
+docker-compose up -d
+
+# Nur Container neustarten (Daten behalten)
+docker-compose restart
+```
+
 ## Konfiguration
 
 Umgebungsvariablen in `.env`:

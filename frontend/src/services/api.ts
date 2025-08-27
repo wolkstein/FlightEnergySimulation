@@ -12,10 +12,17 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for debugging
+// Request interceptor for debugging and authentication
 api.interceptors.request.use(
   (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
+    
+    // Add authentication header if token is available
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     return config;
   },
   (error) => {
@@ -32,6 +39,16 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Response Error:', error.response?.status, error.response?.data || error.message);
+    
+    // Handle authentication errors
+    if (error.response?.status === 401) {
+      // Clear auth data and redirect to login
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      // Force reload to reset app state
+      window.location.reload();
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -91,6 +108,43 @@ export const apiService = {
   // Health check
   async healthCheck(): Promise<{ message: string; version: string }> {
     const response = await api.get('/');
+    return response.data;
+  },
+
+  // Authentication endpoints
+  async register(userData: { username: string; email: string; password: string }): Promise<any> {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  async login(credentials: { username: string; password: string }): Promise<any> {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  async getCurrentUser(): Promise<any> {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+
+  // Groups endpoints
+  async getGroups(): Promise<any[]> {
+    const response = await api.get('/groups/');
+    return response.data;
+  },
+
+  async createGroup(groupData: { name: string; description?: string }): Promise<any> {
+    const response = await api.post('/groups/', groupData);
+    return response.data;
+  },
+
+  async joinGroup(groupName: string): Promise<any> {
+    const response = await api.post('/groups/join', { group_name: groupName });
+    return response.data;
+  },
+
+  async leaveGroup(groupId: number): Promise<any> {
+    const response = await api.delete(`/groups/${groupId}`);
     return response.data;
   },
 };

@@ -32,6 +32,9 @@ class SimulationSession(Base):
     total_time_s = Column(Float)
     battery_usage_percent = Column(Float)
     
+    # User ownership
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable for backward compatibility
+    
     # Erweiterte Daten als JSON
     vehicle_config = Column(JSON)  # VehicleConfig als JSON
     waypoints = Column(JSON)       # Waypoint-Liste als JSON
@@ -40,6 +43,9 @@ class SimulationSession(Base):
     
     # Relation zu Flight Segments für detaillierte Abfrage
     flight_segments = relationship("FlightSegment", back_populates="session", cascade="all, delete-orphan")
+    
+    # User relationship
+    owner = relationship("User", back_populates="owned_sessions")
 
 
 class FlightSegment(Base):

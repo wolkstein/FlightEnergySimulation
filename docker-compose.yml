@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       - WINDFINDER_API_KEY=${WINDFINDER_API_KEY}
-      - DATABASE_URL=sqlite:///./simulation.db
+      - DATABASE_URL=postgresql://flight_user:flight_password@db:5432/flight_simulation
     volumes:
       - ./backend/data:/app/data
     depends_on:
@@ -23,8 +23,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
 
   db:
     image: postgres:13

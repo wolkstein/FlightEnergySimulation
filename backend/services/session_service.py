@@ -9,7 +9,8 @@ class SessionService:
     
     def create_session(self, db: Session, simulation_request: SimulationRequest, 
                       simulation_result: SimulationResult, 
-                      session_name: Optional[str] = None) -> SimulationSession:
+                      session_name: Optional[str] = None,
+                      owner_id: Optional[int] = None) -> SimulationSession:
         """Erstellt eine neue Session mit vollständigen Simulationsdaten"""
         
         # Automatischen Namen generieren wenn keiner gegeben
@@ -34,6 +35,7 @@ class SessionService:
             total_distance_m=simulation_result.total_distance_m,
             total_time_s=simulation_result.total_time_s,
             battery_usage_percent=simulation_result.battery_usage_percent,
+            owner_id=owner_id,
             vehicle_config=simulation_request.vehicle_config.model_dump(),
             waypoints=[wp.model_dump() for wp in simulation_request.waypoints],
             wind_settings=wind_settings,

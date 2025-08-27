@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Typography, message } from 'antd';
+import { Layout, Menu, Typography, message, Button, Space, Avatar, Dropdown } from 'antd';
 import {
   HomeOutlined,
   CalculatorOutlined,
@@ -25,10 +25,15 @@ import {
   SettingOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import SimulationForm from './components/SimulationForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import SessionHistory from './components/SessionHistory';
+import AuthModal from './components/AuthModal';
+import UserGroups from './components/UserGroups';
 import { SimulationResult, VehicleConfig, Waypoint } from './types/simulation';
 import './App.css';
 import './mobile-override.css'; // Load mobile override CSS last
@@ -36,12 +41,25 @@ import './mobile-override.css'; // Load mobile override CSS last
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
 
-type MenuKey = 'simulation' | 'results' | 'history' | 'settings';
+type MenuKey = 'simulation' | 'results' | 'history' | 'groups' | 'settings';
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  is_active: boolean;
+  created_at: string;
+}
 
 const App: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('simulation');
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Authentication state
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   
   // Responsive Sidebar State
   const [collapsed, setCollapsed] = useState(false);
@@ -65,6 +83,24 @@ const App: React.FC = () => {
     flightDuration: 1.0
   });
 
+  // Check for existing authentication on app load
+  useEffect(() => {
+    const savedToken = localStorage.getItem('auth_token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (savedToken && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setToken(savedToken);
+        setUser(userData);
+      } catch (error) {
+        // Clear invalid data
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
+
   // Responsive behavior
   useEffect(() => {
     const handleResize = () => {
@@ -79,6 +115,19 @@ const App: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleAuthSuccess = (authToken: string, userData: User) => {
+    setToken(authToken);
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    message.success('Logged out successfully');
+  };
 
   const handleSimulationComplete = (result: SimulationResult) => {
     setSimulationResult(result);
@@ -143,6 +192,8 @@ const App: React.FC = () => {
         );
       case 'history':
         return <SessionHistory onRestoreSession={handleRestoreSession} />;
+      case 'groups':
+        return <UserGroups user={user} token={token} />;
       case 'settings':
         return (
           <div className="content-centered">
@@ -206,6 +257,12 @@ const App: React.FC = () => {
               label: 'Verlauf',
             },
             {
+              key: 'groups',
+              icon: <TeamOutlined />,
+              label: 'Gruppen',
+              disabled: !user, // Only available when logged in
+            },
+            {
               key: 'settings',
               icon: <SettingOutlined />,
               label: 'Einstellungen',
@@ -239,8 +296,47 @@ const App: React.FC = () => {
             {selectedMenu === 'simulation' && 'Energieverbrauch Simulation'}
             {selectedMenu === 'results' && 'Simulationsergebnisse'}
             {selectedMenu === 'history' && 'Simulation Verlauf'}
+            {selectedMenu === 'groups' && 'Benutzergruppen'}
             {selectedMenu === 'settings' && 'Einstellungen'}
           </Title>
+          
+          {/* Authentication UI */}
+          <Space>
+            {user ? (
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'profile',
+                      icon: <UserOutlined />,
+                      label: user.username,
+                      disabled: true,
+                    },
+                    {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'logout',
+                      icon: <LogoutOutlined />,
+                      label: 'Logout',
+                      onClick: handleLogout,
+                    },
+                  ],
+                }}
+                placement="bottomRight"
+              >
+                <Avatar icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
+              </Dropdown>
+            ) : (
+              <Button 
+                type="primary" 
+                icon={<UserOutlined />}
+                onClick={() => setAuthModalVisible(true)}
+              >
+                {!isMobile && 'Login'}
+              </Button>
+            )}
+          </Space>
         </Header>
         
         <Content style={{ 
@@ -253,6 +349,13 @@ const App: React.FC = () => {
           </div>
         </Content>
       </Layout>
+      
+      {/* Authentication Modal */}
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </Layout>
   );
 };
