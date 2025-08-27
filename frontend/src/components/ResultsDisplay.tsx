@@ -69,7 +69,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
         altitude_avg_m: Number(((startAlt + endAlt) / 2).toFixed(1)),
         
         // Wind
-        headwind_ms: Number(headwindComponent.toFixed(1)),
+        headwind_ms: Number((-headwindComponent).toFixed(1)), // Vorzeichen umkehren für intuitive Anzeige
         crosswind_ms: Number((segment.wind_influence?.crosswind_ms || 0).toFixed(1)),
         total_wind_ms: Number((segment.wind_influence?.total_wind_speed || 0).toFixed(1)),
         
@@ -154,7 +154,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
       render: (_: any, record: any) => (
         <Space direction="vertical" size="small">
           <Text style={{ fontSize: '12px' }}>
-            Gegen: {(record.wind_influence?.headwind_ms || 0).toFixed(1)}
+            Gegen: {(-(record.wind_influence?.headwind_ms || 0)).toFixed(1)}
           </Text>
           <Text style={{ fontSize: '12px' }}>
             Quer: {(record.wind_influence?.crosswind_ms || 0).toFixed(1)}
