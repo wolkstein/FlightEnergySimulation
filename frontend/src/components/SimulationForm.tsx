@@ -176,20 +176,17 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const addWaypoint = () => {
     const lastWaypoint = waypoints[waypoints.length - 1];
     const newWaypoint: Waypoint = {
-      latitude: lastWaypoint.latitude + 0.001,
-      longitude: lastWaypoint.longitude + 0.001,
-      altitude: lastWaypoint.altitude,
+      latitude: lastWaypoint ? lastWaypoint.latitude + 0.001 : 48.1351,
+      longitude: lastWaypoint ? lastWaypoint.longitude + 0.001 : 11.5820,
+      altitude: lastWaypoint ? lastWaypoint.altitude : 50,
     };
     setPersistentWaypoints([...waypoints, newWaypoint]);
   };
 
   const removeWaypoint = (index: number) => {
-    if (waypoints.length > 2) {
-      const newWaypoints = waypoints.filter((_, i) => i !== index);
-      setPersistentWaypoints(newWaypoints);
-    } else {
-      message.warning('Mindestens 2 Waypoints sind erforderlich');
-    }
+    // Entfernung der Mindest-Wegpunkt-Beschränkung - erlaubt jetzt 0 Wegpunkte
+    const newWaypoints = waypoints.filter((_, i) => i !== index);
+    setPersistentWaypoints(newWaypoints);
   };
 
   const updateWaypoint = (index: number, field: keyof Waypoint, value: number) => {
@@ -444,14 +441,13 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                     size="small"
                     title={`Wegpunkt ${index + 1}`}
                     extra={
-                      waypoints.length > 2 && (
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeWaypoint(index)}
-                        />
-                      )
+                      // Entfernung der Bedingung - Delete-Button ist immer verfügbar
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => removeWaypoint(index)}
+                      />
                     }
                     className="card-margin-bottom"
                   >
@@ -513,6 +509,14 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
           >
             {loading ? 'Simulation läuft...' : 'Simulation starten'}
           </Button>
+          
+          {waypoints.length < 2 && (
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Mindestens 2 Wegpunkte erforderlich für Simulation
+              </Text>
+            </div>
+          )}
         </div>
       </Card>
 
