@@ -104,6 +104,39 @@ else
     echo "❌ Sessions failed (HTTP $response)"
 fi
 
+# Test 6: Authentication Tests
+echo "📋 Test 6: Authentication"
+auth_response=$(curl -s -o /dev/null -w "%{http_code}" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password_hash": "testhash"}' \
+  $API_URL/api/auth/login)
+
+if [ $auth_response -eq 200 ] || [ $auth_response -eq 401 ]; then
+  echo "✅ Authentication endpoint responding"
+else
+  echo "❌ Authentication endpoint failed (HTTP $auth_response)"
+fi
+
+# Test 7: Invalid Data Handling
+echo "📋 Test 7: Invalid Data Handling"
+invalid_simulation='{
+  "vehicle_type": "invalid_type",
+  "waypoints": []
+}'
+
+response=$(curl -s -o /dev/null -w "%{http_code}" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d "$invalid_simulation" \
+  $API_URL/api/simulation)
+
+if [ $response -eq 422 ] || [ $response -eq 400 ]; then
+  echo "✅ Proper error handling for invalid data"
+else
+  echo "❌ Invalid data not properly handled (HTTP $response)"
+fi
+
 echo ""
 echo "🎉 API Tests completed!"
 echo "💡 To test the frontend, open http://localhost:3000"

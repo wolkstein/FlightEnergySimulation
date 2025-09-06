@@ -67,10 +67,7 @@ const App: React.FC = () => {
 
   // State-Persistierung auf App-Level für das gesamte Formular
   const [persistentVehicleConfig, setPersistentVehicleConfig] = useState<VehicleConfig | null>(null);
-  const [persistentWaypoints, setPersistentWaypoints] = useState<Waypoint[]>([
-    { latitude: 48.1351, longitude: 11.5820, altitude: 50 }, // München
-    { latitude: 48.1451, longitude: 11.5920, altitude: 100 },
-  ]);
+  const [persistentWaypoints, setPersistentWaypoints] = useState<Waypoint[]>([]);
   
   // Wind-Settings State auf App-Level - Fix für Wind-Settings Reset Bug
   const [persistentWindSettings, setPersistentWindSettings] = useState({

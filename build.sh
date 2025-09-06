@@ -42,33 +42,49 @@ sudo docker-compose up --build -d
 echo "⏳ Waiting for services to start..."
 sleep 10
 
-# Health checks
+# Enhanced health checks with retries
 echo "🏥 Performing health checks..."
 
-# Check Backend
-if curl -f -s http://localhost:8000/ > /dev/null; then
-    echo "✅ Backend is running (Port 8000)"
+# Function for retrying health checks
+check_service() {
+    local service_name=$1
+    local url=$2
+    local max_retries=10
+    local retry_count=0
+    
+    while [ $retry_count -lt $max_retries ]; do
+        if curl -f -s "$url" > /dev/null 2>&1; then
+            echo "✅ $service_name is running"
+            return 0
+        fi
+        
+        retry_count=$((retry_count + 1))
+        echo "⏳ Waiting for $service_name... (attempt $retry_count/$max_retries)"
+        sleep 3
+    done
+    
+    echo "❌ $service_name health check failed after $max_retries attempts"
+    echo "📋 $service_name logs:"
+    sudo docker-compose logs "$service_name"
+    return 1
+}
+
+# Check services with retries
+check_service "Backend" "http://localhost:8000/"
+check_service "Frontend" "http://localhost:3000/"
+
+# Enhanced database check
+if sudo docker-compose exec db pg_isready -U postgres > /dev/null 2>&1; then
+    echo "✅ Database is running and accepting connections"
 else
-    echo "❌ Backend health check failed"
-    echo "📋 Backend logs:"
-    sudo docker-compose logs backend
+    echo "❌ Database is not ready"
+    echo "📋 Database logs:"
+    sudo docker-compose logs db
 fi
 
-# Check Frontend
-if curl -f -s http://localhost:3000/ > /dev/null; then
-    echo "✅ Frontend is running (Port 3000)"  
-else
-    echo "❌ Frontend health check failed"
-    echo "📋 Frontend logs:"
-    sudo docker-compose logs frontend
-fi
-
-# Check Database
-if sudo docker-compose ps db | grep -q "Up"; then
-    echo "✅ Database is running"
-else
-    echo "❌ Database is not running"
-fi
+# Container status check
+echo "📋 Container Status:"
+sudo docker-compose ps
 
 echo ""
 echo "🎉 Application is ready!"
@@ -76,5 +92,7 @@ echo "🌐 Frontend: http://localhost:3000"
 echo "🔗 Backend API: http://localhost:8000"  
 echo "📚 API Docs: http://localhost:8000/docs"
 echo ""
+echo "🧪 Run API tests: ./test_api.sh"
 echo "📋 To stop: sudo docker-compose down"
 echo "📋 To view logs: sudo docker-compose logs -f"
+echo "📋 To reset database: sudo docker-compose down -v"

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Button, message, Space, Typography, Modal, Table } from 'antd';
+import { Upload, Button, message, Space, Typography, Modal, Table, Alert } from 'antd';
 import { UploadOutlined, FileTextOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { Waypoint } from '../types/simulation';
@@ -21,6 +21,8 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
   const [loading, setLoading] = useState(false);
   const [previewWaypoints, setPreviewWaypoints] = useState<Waypoint[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   const columns = [
     {
@@ -64,21 +66,36 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
 
   const handleFileUpload = async (file: File) => {
     setLoading(true);
+    setImportError(null);
+    setFileName(file.name);
+    
     try {
+      // File size check (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File too large. Maximum size is 10MB.');
+      }
+
       const waypoints = await MissionImportService.importMissionFile(file);
       
       if (waypoints.length === 0) {
-        message.warning('No valid waypoints found in the file');
+        setImportError('No valid waypoints found in the file. Please check the file format.');
+        return false;
+      }
+
+      if (waypoints.length > 1000) {
+        setImportError('Too many waypoints. Maximum supported is 1000 waypoints.');
         return false;
       }
 
       setPreviewWaypoints(waypoints);
       setShowPreview(true);
-      message.success(`Successfully imported ${waypoints.length} waypoints`);
+      message.success(`Successfully imported ${waypoints.length} waypoints from ${file.name}`);
       
     } catch (error) {
       console.error('Import error:', error);
-      message.error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setImportError(errorMessage);
+      message.error(`Import failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -121,16 +138,31 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
             <FileTextOutlined /> Import Waypoints from Mission Files
           </Title>
           
+          {/* Enhanced file format info */}
           <div className="section-margin-bottom">
             <Text>
               <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
-              Supported formats:
+              Supported formats and file size limit (max 10MB):
             </Text>
             <ul style={{ marginTop: 8, marginLeft: 20 }}>
-              <li><strong>.plan</strong> - QGroundControl mission files</li>
-              <li><strong>.waypoints, .mission</strong> - MissionPlanner waypoint files</li>
+              <li><strong>.plan</strong> - QGroundControl mission files (JSON format)</li>
+              <li><strong>.waypoints, .mission</strong> - MissionPlanner waypoint files (tab-separated)</li>
+              <li><strong>Limits:</strong> Maximum 1000 waypoints per mission</li>
             </ul>
           </div>
+
+          {/* Error display */}
+          {importError && (
+            <Alert
+              message="Import Error"
+              description={importError}
+              type="error"
+              showIcon
+              closable
+              onClose={() => setImportError(null)}
+              style={{ marginBottom: 16 }}
+            />
+          )}
 
           <Upload {...uploadProps}>
             <Button 
@@ -139,7 +171,7 @@ const MissionImportComponent: React.FC<MissionImportComponentProps> = ({
               size="large"
               type="primary"
             >
-              Select Mission File
+              {loading ? `Processing ${fileName}...` : 'Select Mission File'}
             </Button>
           </Upload>
 

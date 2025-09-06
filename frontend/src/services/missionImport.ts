@@ -99,6 +99,12 @@ export class MissionImportService {
           continue;
         }
 
+        // Enhanced validation with proper error handling
+        if (!this.validateCoordinates(lat, lon, alt)) {
+          console.warn('Invalid coordinates found, skipping waypoint:', { lat, lon, alt, command: item.command });
+          continue;
+        }
+
         waypoints.push({
           latitude: lat,
           longitude: lon,
@@ -328,6 +334,17 @@ export class MissionImportService {
   private static extractHoverTime(item: QGCMissionItem): number {
     // Extract hover time from params[0] if it's a waypoint
     return item.params && item.params[0] > 0 ? item.params[0] : 0;
+  }
+
+  // Improved error handling and validation
+  private static validateCoordinates(lat: number, lon: number, alt: number): boolean {
+    return (
+      typeof lat === 'number' && 
+      typeof lon === 'number' && 
+      lat >= -90 && lat <= 90 &&
+      lon >= -180 && lon <= 180 &&
+      alt >= 0 && alt <= 10000 // reasonable altitude limit
+    );
   }
 }
 
