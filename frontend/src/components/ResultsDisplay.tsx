@@ -24,7 +24,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
     );
   }
   
-  // Daten für neue Timeline-Charts vorbereiten
+  // Daten für Timeline-Charts: Ein Datenpunkt pro Wegpunkt mit korrekter X-Achsen Streckung
   const prepareTimelineData = () => {
     if (!result.flight_segments || result.flight_segments.length === 0) {
       return [];
@@ -34,16 +34,57 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
     let cumulativeDistance = 0;
     let cumulativeEnergy = 0;
     
-    // Erstelle Datenpunkte für Start und Ende jedes Segments
     const dataPoints: any[] = [];
     
-    result.flight_segments.forEach((segment, index) => {
-      const startTime = cumulativeTime;
-      const startDistance = cumulativeDistance;
+    // Erster Waypoint (Start der Mission)
+    if (result.flight_segments.length > 0) {
+      const firstSegment = result.flight_segments[0];
+      const startAlt = firstSegment.start_waypoint?.altitude || 0;
       
+      dataPoints.push({
+        // X-Achse: Start bei Zeit 0 und Distanz 0
+        time_minutes: 0,
+        distance_km: 0,
+        
+        // Höhe des ersten Wegpunkts
+        altitude_m: startAlt,
+        
+        // Geschwindigkeiten vom ersten Segment (werden für ersten Waypoint verwendet)
+        ground_speed_ms: Number((firstSegment.average_speed_ms || 0).toFixed(1)),
+        airspeed_ms: Number((Math.max(0.1, (firstSegment.average_speed_ms || 0) - (firstSegment.wind_influence?.headwind_ms || 0))).toFixed(1)),
+        vertical_speed_ms: 0, // Am Startpunkt
+        
+        // Wind vom ersten Segment
+        headwind_ms: Number((-(firstSegment.wind_influence?.headwind_ms || 0)).toFixed(1)),
+        crosswind_ms: Number((firstSegment.wind_influence?.crosswind_ms || 0).toFixed(1)),
+        total_wind_ms: Number((firstSegment.wind_influence?.total_wind_speed || 0).toFixed(1)),
+        
+        // Energie & Leistung
+        power_w: Number((firstSegment.average_power_w || 0).toFixed(0)),
+        energy_wh: 0, // Am Start keine Energie verbraucht
+        
+        // Batterie am Start (100%)
+        cumulative_energy_wh: 0,
+        battery_remaining_wh: Number((result.total_energy_wh / result.battery_usage_percent * 100).toFixed(2)),
+        battery_remaining_percent: 100,
+        
+        // Segment Info
+        segment_id: 1,
+        segment_duration_s: 0,
+        segment_distance_m: 0,
+      });
+    }
+    
+    // Alle weiteren Wegpunkte (Ende jedes Segments)
+    result.flight_segments.forEach((segment, index) => {
       const segmentDuration = segment.duration_s || 0;
       const segmentDistance = segment.distance_m || 0;
       const segmentEnergy = segment.energy_wh || 0;
+      
+      // Kumulative Werte aktualisieren
+      cumulativeTime += segmentDuration;
+      cumulativeDistance += segmentDistance;
+      cumulativeEnergy += segmentEnergy;
       
       // Airspeed berechnen: Ground Speed - Headwind Component
       const groundSpeed = segment.average_speed_ms || 0;
@@ -51,70 +92,31 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
       const airspeed = Math.max(0.1, groundSpeed - headwindComponent);
       
       // Höhen aus Waypoints
-      const startAlt = segment.start_waypoint?.altitude || 0;
       const endAlt = segment.end_waypoint?.altitude || 0;
+      const startAlt = segment.start_waypoint?.altitude || 0;
       const altitudeDiff = endAlt - startAlt;
       const verticalSpeed = segmentDuration > 0 ? altitudeDiff / segmentDuration : 0;
       
-      // Start-Punkt des Segments
+      // End-Waypoint des Segments
       dataPoints.push({
-        // X-Achse Werte
-        time_minutes: Number((startTime / 60).toFixed(2)),
-        distance_km: Number((startDistance / 1000).toFixed(3)),
+        // X-Achse Werte - proportional zur tatsächlichen Zeit/Distanz
+        time_minutes: Number((cumulativeTime / 60).toFixed(2)),
+        distance_km: Number((cumulativeDistance / 1000).toFixed(3)),
+        
+        // Höhe des End-Wegpunkts
+        altitude_m: endAlt,
         
         // Geschwindigkeiten
         ground_speed_ms: Number(groundSpeed.toFixed(1)),
         airspeed_ms: Number(airspeed.toFixed(1)),
         vertical_speed_ms: Number(verticalSpeed.toFixed(1)),
         
-        // Höhe - echte Waypoint-Höhe
-        altitude_m: startAlt,
-        
         // Wind
-        headwind_ms: Number((-headwindComponent).toFixed(1)), // Vorzeichen umkehren für intuitive Anzeige
+        headwind_ms: Number((-headwindComponent).toFixed(1)), // Vorzeichen umkehren
         crosswind_ms: Number((segment.wind_influence?.crosswind_ms || 0).toFixed(1)),
         total_wind_ms: Number((segment.wind_influence?.total_wind_speed || 0).toFixed(1)),
         
         // Energie & Leistung
-        power_w: Number((segment.average_power_w || 0).toFixed(0)),
-        energy_wh: Number(segmentEnergy.toFixed(2)),
-        
-        // Batterieentladung
-        cumulative_energy_wh: Number(cumulativeEnergy.toFixed(2)),
-        battery_remaining_wh: Number(Math.max(0, (result.total_energy_wh / result.battery_usage_percent * 100) - cumulativeEnergy).toFixed(2)),
-        battery_remaining_percent: Number((100 - (cumulativeEnergy / (result.total_energy_wh / result.battery_usage_percent * 100)) * 100).toFixed(1)),
-        
-        // Segment Info für Tooltips
-        segment_id: segment.segment_id || index + 1,
-        segment_duration_s: segmentDuration,
-        segment_distance_m: segmentDistance,
-      });
-      
-      // End-Punkt des Segments (nur wenn nicht der letzte Segment)
-      cumulativeTime += segmentDuration;
-      cumulativeDistance += segmentDistance;
-      cumulativeEnergy += segmentEnergy;
-      
-      // End-Punkt hinzufügen
-      dataPoints.push({
-        // X-Achse Werte
-        time_minutes: Number((cumulativeTime / 60).toFixed(2)),
-        distance_km: Number((cumulativeDistance / 1000).toFixed(3)),
-        
-        // Geschwindigkeiten (gleich wie am Start des Segments)
-        ground_speed_ms: Number(groundSpeed.toFixed(1)),
-        airspeed_ms: Number(airspeed.toFixed(1)),
-        vertical_speed_ms: Number(verticalSpeed.toFixed(1)),
-        
-        // Höhe - echte End-Waypoint-Höhe
-        altitude_m: endAlt,
-        
-        // Wind (gleich wie am Start des Segments)
-        headwind_ms: Number((-headwindComponent).toFixed(1)),
-        crosswind_ms: Number((segment.wind_influence?.crosswind_ms || 0).toFixed(1)),
-        total_wind_ms: Number((segment.wind_influence?.total_wind_speed || 0).toFixed(1)),
-        
-        // Energie & Leistung (kumulativ)
         power_w: Number((segment.average_power_w || 0).toFixed(0)),
         energy_wh: Number(segmentEnergy.toFixed(2)),
         
@@ -353,7 +355,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
             <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
+                type="number"
                 dataKey={showTimeAxis ? "time_minutes" : "distance_km"}
+                domain={['dataMin', 'dataMax']}
                 label={{ 
                   value: showTimeAxis ? 'Zeit (min)' : 'Distanz (km)', 
                   position: 'insideBottom', 
@@ -416,7 +420,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
             <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
+                type="number"
                 dataKey={showTimeAxis ? "time_minutes" : "distance_km"}
+                domain={['dataMin', 'dataMax']}
                 label={{ 
                   value: showTimeAxis ? 'Zeit (min)' : 'Distanz (km)', 
                   position: 'insideBottom', 
@@ -471,7 +477,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
             <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
+                type="number"
                 dataKey={showTimeAxis ? "time_minutes" : "distance_km"}
+                domain={['dataMin', 'dataMax']}
                 label={{ 
                   value: showTimeAxis ? 'Zeit (min)' : 'Distanz (km)', 
                   position: 'insideBottom', 

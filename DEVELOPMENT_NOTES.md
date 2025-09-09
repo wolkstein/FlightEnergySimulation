@@ -173,6 +173,7 @@ cd frontend && npm test
 - [x] **Client-Side Password Hashing** - SHA-256 mit Salt, keine Klartext-Übertragung ✅ 27.08.2025
 - [x] **User Authentication System** - JWT-basierte Sessions mit PostgreSQL Backend ✅ 27.08.2025
 - [x] **Altitude Chart Display Fix** - Echte Waypoint-Höhen statt Durchschnittswerte in Flight Profile Chart ✅ 27.08.2025
+- [x] **X-Axis Proportional Scaling Fix** - Charts zeigen echte Zeit/Distanz-Proportionen statt gleichmäßiger Verteilung ✅ 27.08.2025
 - [ ] **Parameter Validation** - Client + Server-side Eingabevalidierung
 - [ ] **Error Handling** - Benutzerfreundliche Fehlermeldungen
 - [ ] **Mobile Responsiveness** - Tablet/Phone Layout Optimierungen
