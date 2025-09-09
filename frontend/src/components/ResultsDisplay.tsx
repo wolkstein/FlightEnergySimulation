@@ -34,39 +34,41 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
     let cumulativeDistance = 0;
     let cumulativeEnergy = 0;
     
-    return result.flight_segments.map((segment, index) => {
+    // Erstelle Datenpunkte für Start und Ende jedes Segments
+    const dataPoints: any[] = [];
+    
+    result.flight_segments.forEach((segment, index) => {
       const startTime = cumulativeTime;
       const startDistance = cumulativeDistance;
       
-      cumulativeTime += segment.duration_s || 0;
-      cumulativeDistance += segment.distance_m || 0;
-      cumulativeEnergy += segment.energy_wh || 0;
+      const segmentDuration = segment.duration_s || 0;
+      const segmentDistance = segment.distance_m || 0;
+      const segmentEnergy = segment.energy_wh || 0;
       
       // Airspeed berechnen: Ground Speed - Headwind Component
       const groundSpeed = segment.average_speed_ms || 0;
       const headwindComponent = segment.wind_influence?.headwind_ms || 0;
       const airspeed = Math.max(0.1, groundSpeed - headwindComponent);
       
-      // Höhendifferenz und Vertikalgeschwindigkeit
+      // Höhen aus Waypoints
       const startAlt = segment.start_waypoint?.altitude || 0;
       const endAlt = segment.end_waypoint?.altitude || 0;
       const altitudeDiff = endAlt - startAlt;
-      const verticalSpeed = segment.duration_s > 0 ? altitudeDiff / segment.duration_s : 0;
+      const verticalSpeed = segmentDuration > 0 ? altitudeDiff / segmentDuration : 0;
       
-      return {
+      // Start-Punkt des Segments
+      dataPoints.push({
         // X-Achse Werte
-        time_minutes: Number((cumulativeTime / 60).toFixed(2)),
-        distance_km: Number((cumulativeDistance / 1000).toFixed(3)),
+        time_minutes: Number((startTime / 60).toFixed(2)),
+        distance_km: Number((startDistance / 1000).toFixed(3)),
         
         // Geschwindigkeiten
         ground_speed_ms: Number(groundSpeed.toFixed(1)),
         airspeed_ms: Number(airspeed.toFixed(1)),
         vertical_speed_ms: Number(verticalSpeed.toFixed(1)),
         
-        // Höhe
-        altitude_start_m: startAlt,
-        altitude_end_m: endAlt,
-        altitude_avg_m: Number(((startAlt + endAlt) / 2).toFixed(1)),
+        // Höhe - echte Waypoint-Höhe
+        altitude_m: startAlt,
         
         // Wind
         headwind_ms: Number((-headwindComponent).toFixed(1)), // Vorzeichen umkehren für intuitive Anzeige
@@ -75,7 +77,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
         
         // Energie & Leistung
         power_w: Number((segment.average_power_w || 0).toFixed(0)),
-        energy_wh: Number((segment.energy_wh || 0).toFixed(2)),
+        energy_wh: Number(segmentEnergy.toFixed(2)),
         
         // Batterieentladung
         cumulative_energy_wh: Number(cumulativeEnergy.toFixed(2)),
@@ -84,10 +86,51 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
         
         // Segment Info für Tooltips
         segment_id: segment.segment_id || index + 1,
-        segment_duration_s: segment.duration_s || 0,
-        segment_distance_m: segment.distance_m || 0,
-      };
+        segment_duration_s: segmentDuration,
+        segment_distance_m: segmentDistance,
+      });
+      
+      // End-Punkt des Segments (nur wenn nicht der letzte Segment)
+      cumulativeTime += segmentDuration;
+      cumulativeDistance += segmentDistance;
+      cumulativeEnergy += segmentEnergy;
+      
+      // End-Punkt hinzufügen
+      dataPoints.push({
+        // X-Achse Werte
+        time_minutes: Number((cumulativeTime / 60).toFixed(2)),
+        distance_km: Number((cumulativeDistance / 1000).toFixed(3)),
+        
+        // Geschwindigkeiten (gleich wie am Start des Segments)
+        ground_speed_ms: Number(groundSpeed.toFixed(1)),
+        airspeed_ms: Number(airspeed.toFixed(1)),
+        vertical_speed_ms: Number(verticalSpeed.toFixed(1)),
+        
+        // Höhe - echte End-Waypoint-Höhe
+        altitude_m: endAlt,
+        
+        // Wind (gleich wie am Start des Segments)
+        headwind_ms: Number((-headwindComponent).toFixed(1)),
+        crosswind_ms: Number((segment.wind_influence?.crosswind_ms || 0).toFixed(1)),
+        total_wind_ms: Number((segment.wind_influence?.total_wind_speed || 0).toFixed(1)),
+        
+        // Energie & Leistung (kumulativ)
+        power_w: Number((segment.average_power_w || 0).toFixed(0)),
+        energy_wh: Number(segmentEnergy.toFixed(2)),
+        
+        // Batterieentladung
+        cumulative_energy_wh: Number(cumulativeEnergy.toFixed(2)),
+        battery_remaining_wh: Number(Math.max(0, (result.total_energy_wh / result.battery_usage_percent * 100) - cumulativeEnergy).toFixed(2)),
+        battery_remaining_percent: Number((100 - (cumulativeEnergy / (result.total_energy_wh / result.battery_usage_percent * 100)) * 100).toFixed(1)),
+        
+        // Segment Info für Tooltips
+        segment_id: segment.segment_id || index + 1,
+        segment_duration_s: segmentDuration,
+        segment_distance_m: segmentDistance,
+      });
     });
+    
+    return dataPoints;
   };
   
   const timelineData = prepareTimelineData();
@@ -345,12 +388,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
               <Line 
                 yAxisId="altitude"
                 type="monotone" 
-                dataKey="altitude_avg_m" 
+                dataKey="altitude_m" 
                 stroke="#8c8c8c" 
-                strokeWidth={1}
-                strokeDasharray="3 3"
+                strokeWidth={2}
                 name="Höhe (m)"
-                dot={false}
+                dot={{ r: 4 }}
               />
               
               {/* Referenzlinie für durchschnittliche Ground Speed */}
