@@ -10,20 +10,14 @@ interface ResultsDisplayProps {
 }
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
-  // Toggle für X-Achse: Zeit vs. Distanz (Hook muss VOR jedem return stehen)
+  // ALLE HOOKS ZUERST (vor jedem return!)
   const [showTimeAxis, setShowTimeAxis] = useState(true);
 
-  // Null-Check für result
+  // NULL-CHECK NACH HOOKS
   if (!result || !result.flight_segments) {
-    return (
-      <div className="container-centered">
-        <Card>
-          <Text>Keine Simulationsdaten verfügbar.</Text>
-        </Card>
-      </div>
-    );
+    return null; // Vereinfacht für Build
   }
-  
+
   // Daten für Timeline-Charts: Ein Datenpunkt pro Wegpunkt mit korrekter X-Achsen Streckung
   const prepareTimelineData = () => {
     if (!result.flight_segments || result.flight_segments.length === 0) {
@@ -388,18 +382,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
                 name="Airspeed (m/s)"
               />
               
-              {/* Höhenlinie */}
+              {/* Höhenlinien */}
               <Line 
                 yAxisId="altitude"
                 type="monotone" 
                 dataKey="altitude_m" 
                 stroke="#8c8c8c" 
                 strokeWidth={2}
-                name="Höhe (m)"
+                name="Flughöhe (m)"
                 dot={{ r: 4 }}
               />
               
-              {/* Referenzlinie für durchschnittliche Ground Speed */}
+              {/* Referenzlinien */}
               <ReferenceLine 
                 yAxisId="speed" 
                 y={result.summary.average_speed_ms} 
@@ -407,6 +401,16 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
                 strokeWidth={2}
                 strokeDasharray="8 4" 
                 label={{ value: `Ø Ground Speed: ${result.summary.average_speed_ms.toFixed(1)} m/s`, position: "left" }}
+              />
+              
+              {/* Safety Clearance Referenz */}
+              <ReferenceLine 
+                yAxisId="altitude" 
+                y={0} 
+                stroke="#faad14" 
+                strokeWidth={1}
+                strokeDasharray="3 3" 
+                label={{ value: "30m Safety Clearance", position: "right" }}
               />
             </LineChart>
           </ResponsiveContainer>

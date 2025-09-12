@@ -34,7 +34,9 @@ import ResultsDisplay from './components/ResultsDisplay';
 import SessionHistory from './components/SessionHistory';
 import AuthModal from './components/AuthModal';
 import UserGroups from './components/UserGroups';
-import { SimulationResult, VehicleConfig, Waypoint } from './types/simulation';
+import { VehicleConfig, Waypoint, SimulationResult } from './types/simulation';
+import SettingsPage from './components/SettingsPage';
+import { SettingsService } from './services/settingsService';
 import './App.css';
 import './mobile-override.css'; // Load mobile override CSS last
 
@@ -49,6 +51,14 @@ interface User {
   email: string;
   is_active: boolean;
   created_at: string;
+}
+
+interface ElevationSettings {
+  enabled: boolean;
+  opentopo_server: string;
+  dataset: string;
+  safety_margin_m: number;
+  interpolation_distance_m: number;
 }
 
 const App: React.FC = () => {
@@ -79,6 +89,34 @@ const App: React.FC = () => {
     missionStartTime: '',
     flightDuration: 1.0
   });
+
+  // Elevation Settings State auf App-Level - User-Profil basiert
+  const [elevationSettings, setElevationSettings] = useState<ElevationSettings>({
+    enabled: false,
+    opentopo_server: '192.168.71.250:5000',
+    dataset: 'eudem25m',
+    safety_margin_m: 30,
+    interpolation_distance_m: 50
+  });
+
+  // Auto-Save Settings Handler
+  const handleElevationSettingsChange = async (newSettings: ElevationSettings) => {
+    setElevationSettings(newSettings);
+    
+    // Auto-Save wenn User angemeldet ist
+    if (token && user) {
+      try {
+        const success = await SettingsService.updateUserSettings(token, newSettings);
+        if (success) {
+          // Optional: Success message (zu häufig für jeden Klick)
+          // message.success('Settings saved automatically');
+        }
+      } catch (error) {
+        console.warn('Could not save settings:', error);
+        // Keine Error Message - Settings bleiben lokal persistent
+      }
+    }
+  };
 
   // Check for existing authentication on app load
   useEffect(() => {
@@ -113,9 +151,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleAuthSuccess = (authToken: string, userData: User) => {
+  const handleAuthSuccess = async (authToken: string, userData: User) => {
     setToken(authToken);
     setUser(userData);
+    
+    // Auto-Load User Settings nach Login
+    try {
+      const userSettings = await SettingsService.getUserSettings(authToken);
+      setElevationSettings(userSettings);
+    } catch (error) {
+      console.warn('Could not load user settings:', error);
+      // Fallback zu Default-Settings (bereits in State gesetzt)
+    }
   };
 
   const handleLogout = () => {
@@ -193,11 +240,11 @@ const App: React.FC = () => {
         return <UserGroups user={user} token={token} />;
       case 'settings':
         return (
-          <div className="content-centered">
-            <Typography.Text type="secondary">
-              Einstellungen werden in einer zukünftigen Version verfügbar sein.
-            </Typography.Text>
-          </div>
+          <SettingsPage 
+            elevationSettings={elevationSettings}
+            onElevationSettingsChange={handleElevationSettingsChange}
+            isLoggedIn={!!user}
+          />
         );
       default:
         return null;

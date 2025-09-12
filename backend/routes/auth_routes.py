@@ -11,9 +11,15 @@ the Free Software Foundation, either version 3 of the License, or
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
+import hashlib
+import secrets
 
-from models.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from models.user import User, UserCreate, UserLogin, UserResponse, TokenResponse
+# TEMPORARILY DISABLED: from models.database import get_db
+# TEMPORARILY DISABLED: from services.auth_service import get_current_user
 from services.auth_service import (
     authenticate_user, create_user, create_access_token, 
     get_current_active_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -73,3 +79,9 @@ def read_users_me(current_user = Depends(get_current_active_user)):
         is_active=current_user.is_active,
         created_at=current_user.created_at.isoformat()
     )
+
+# User Settings Endpoints - TEMPORARILY DISABLED
+# TODO: Re-enable after fixing import issues
+# 
+# @router.get("/user/settings")
+# @router.put("/user/settings")

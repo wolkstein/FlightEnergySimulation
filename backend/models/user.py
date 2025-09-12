@@ -9,8 +9,10 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Table, JSON
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from sqlalchemy.sql import func
 from pydantic import BaseModel
 from typing import Optional, List
@@ -33,7 +35,14 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # User Settings JSON column - REACTIVATED for elevation settings
+    elevation_settings = Column(JSON, default=lambda: {
+        "opentopo_server": "192.168.71.250:5000",
+        "dataset": "eudem25m", 
+        "safety_margin_m": 30
+    })
     last_login = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
@@ -98,3 +107,14 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+# Elevation Settings Models
+class ElevationSettings(BaseModel):
+    opentopo_server: str = "192.168.71.250:5000"
+    dataset: str = "eudem25m"
+    safety_margin_m: int = 30
+
+class ElevationSettingsUpdate(BaseModel):
+    opentopo_server: Optional[str] = None
+    dataset: Optional[str] = None
+    safety_margin_m: Optional[int] = None

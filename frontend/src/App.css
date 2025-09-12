@@ -289,6 +289,169 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* Lighter shadow */
 }
 
+/* ===== HÖHENPROFIL STYLES ===== */
+
+/* Hauptcontainer für Höhenprofil */
+.elevation-chart-container {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Bereich des Charts */
+.elevation-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.elevation-chart-title {
+  margin: 0;
+  color: #495057;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.elevation-chart-stats {
+  font-size: 11px;
+  color: #6c757d;
+  text-align: right;
+}
+
+/* SVG Chart Styles */
+.elevation-chart-svg {
+  display: block;
+  margin: 0 auto;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+/* Legende */
+.elevation-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 15px;
+  font-size: 12px;
+}
+
+.elevation-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elevation-legend-terrain {
+  width: 20px;
+  height: 3px;
+  background-color: #8b4513;
+  border-radius: 2px;
+}
+
+.elevation-legend-waypoint {
+  width: 12px;
+  height: 12px;
+  background-color: #1890ff;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+.elevation-legend-collision {
+  width: 12px;
+  height: 12px;
+  background-color: #ff4d4f;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+/* Status Messages */
+.elevation-status-safe {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #389e0d;
+  text-align: center;
+}
+
+.elevation-status-warning {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #cf1322;
+  text-align: center;
+}
+
+/* Placeholder States */
+.elevation-placeholder {
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+  margin: 20px 0;
+}
+
+.elevation-loading {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.elevation-error {
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  color: #cf1322;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* Import Preview (minimal styles) */
+.elevation-import-info {
+  padding: 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #0369a1;
+}
+
+.elevation-import-warning {
+  padding: 10px;
+  background: #fffbeb;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #c2410c;
+}
+
+.elevation-import-success {
+  padding: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #15803d;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   .simulation-container {

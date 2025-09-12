@@ -36,6 +36,7 @@ from services.session_service import SessionService
 from services.auth_service import get_current_active_user, get_db
 from routes.auth_routes import router as auth_router
 from routes.group_routes import router as group_router
+from routes.elevation_routes import router as elevation_router
 
 # Load environment variables
 load_dotenv()
@@ -52,6 +53,7 @@ app = FastAPI(
 # Include routers
 app.include_router(auth_router)
 app.include_router(group_router)
+app.include_router(elevation_router)
 
 # CORS middleware
 app.add_middleware(
@@ -75,9 +77,18 @@ energy_calculator = EnergyCalculator()
 wind_service = WindService()
 session_service = SessionService()
 
+# Elevation Service (lazy import to avoid startup issues)
+def get_elevation_service():
+    from services.elevation_service import elevation_service
+    return elevation_service
+
 @app.get("/")
 async def root():
     return {"message": "Flight Energy Simulation API", "version": "1.0.0"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "elevation_service": "ready_for_implementation"}
 
 @app.get("/api/vehicles", response_model=List[dict])
 async def get_vehicles():
@@ -378,6 +389,39 @@ async def delete_session(session_id: int, db=Depends(get_db)):
             raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting session: {str(e)}")
+
+# Elevation API Endpoints
+@app.post("/api/elevation/profile")
+async def get_elevation_profile(request: dict):
+    """Generate elevation profile for a route"""
+    try:
+        waypoints = request.get('waypoints', [])
+        interpolation_distance = request.get('interpolation_distance', 50.0)
+        
+        if len(waypoints) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 waypoints required")
+        
+        # Validate waypoints
+        for i, wp in enumerate(waypoints):
+            required_fields = ['latitude', 'longitude', 'altitude']
+            for field in required_fields:
+                if field not in wp:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Waypoint {i} missing required field: {field}"
+                    )
+        
+        elevation_service = get_elevation_service()
+        profile = await elevation_service.generate_elevation_profile(
+            waypoints, interpolation_distance
+        )
+        
+        return profile
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating elevation profile: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

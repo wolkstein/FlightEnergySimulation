@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { VehicleInfo, SimulationRequest, SimulationResult, SimulationSession, WindData, RestoreSessionData } from '../types/simulation';
+import { VehicleInfo, SimulationRequest, SimulationResult, SimulationSession, WindData, RestoreSessionData, ElevationSettings } from '../types/simulation';
 
 // Use relative URL for Docker container with nginx proxy, fallback to localhost for development
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:8000');
@@ -147,6 +147,21 @@ export const apiService = {
     const response = await api.delete(`/groups/${groupId}`);
     return response.data;
   },
+};
+
+// Settings API functions
+export const settingsApi = {
+  // Get user elevation settings
+  getElevationSettings: async (): Promise<ElevationSettings> => {
+    const response = await api.get('/api/elevation/settings');
+    return response.data;
+  },
+
+  // Update user elevation settings  
+  updateElevationSettings: async (settings: Partial<ElevationSettings>): Promise<ElevationSettings> => {
+    const response = await api.put('/api/elevation/settings', settings);
+    return response.data;
+  }
 };
 
 export default apiService;

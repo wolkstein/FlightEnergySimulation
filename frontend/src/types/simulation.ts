@@ -154,3 +154,11 @@ export interface RestoreSessionData {
     vehicle_type: VehicleType;
   };
 }
+
+export interface ElevationSettings {
+  enabled: boolean;
+  opentopo_server: string;
+  dataset: string;
+  safety_margin_m: number;
+  interpolation_distance_m: number;
+}

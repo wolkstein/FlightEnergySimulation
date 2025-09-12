@@ -14,12 +14,13 @@ import {
   Space,
   Tabs,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, PlayCircleOutlined, ImportOutlined, CalculatorOutlined, SettingOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, PlayCircleOutlined, ImportOutlined, CalculatorOutlined, SettingOutlined, DownloadOutlined } from '@ant-design/icons';
 import WaypointMap from './WaypointMap';
+import ElevationProfileChart from './ElevationProfileChart';
 import VehicleConfigForm from './VehicleConfigForm';
 import MissionImportComponent from './MissionImportComponent';
 import SweetSpotAnalysis from './SweetSpotAnalysis';
-import { VehicleInfo, VehicleType, VehicleConfig, Waypoint, SimulationRequest, SimulationResult } from '../types/simulation';
+import { VehicleInfo, VehicleType, VehicleConfig, Waypoint, SimulationRequest, SimulationResult, ElevationSettings } from '../types/simulation';
 import { apiService } from '../services/api';
 
 const { Title, Text } = Typography;
@@ -34,6 +35,8 @@ interface SimulationFormProps {
   setPersistentVehicleConfig: (config: VehicleConfig | null) => void;
   persistentWaypoints: Waypoint[];
   setPersistentWaypoints: (waypoints: Waypoint[]) => void;
+  // Elevation Settings für OpenTopo Integration
+  elevationSettings?: ElevationSettings;
   // Wind-Settings als Props für State-Persistierung
   persistentWindSettings: {
     windConsideration: boolean;
@@ -64,6 +67,7 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   setPersistentVehicleConfig,
   persistentWaypoints,
   setPersistentWaypoints,
+  elevationSettings,
   persistentWindSettings,
   setPersistentWindSettings,
 }) => {
@@ -193,6 +197,38 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
     const newWaypoints = [...waypoints];
     newWaypoints[index] = { ...newWaypoints[index], [field]: value };
     setPersistentWaypoints(newWaypoints);
+  };
+
+  // KML Export Funktion von ElevationProfileChart übernehmen
+  const exportKML = () => {
+    if (waypoints.length < 2) return;
+    
+    // Vereinfachter KML Export für Waypoints
+    const kmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Flugroute Waypoints</name>
+    <description>Geplante Flugroute mit ${waypoints.length} Wegpunkten</description>
+    ${waypoints.map((wp, i) => `
+    <Placemark>
+      <name>Wegpunkt ${i + 1}</name>
+      <description>Lat: ${wp.latitude.toFixed(6)}°, Lon: ${wp.longitude.toFixed(6)}°, Alt: ${wp.altitude}m</description>
+      <Point>
+        <coordinates>${wp.longitude},${wp.latitude},${wp.altitude}</coordinates>
+      </Point>
+    </Placemark>`).join('')}
+  </Document>
+</kml>`;
+
+    const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `flugroute_waypoints_${new Date().toISOString().slice(0, 16)}.kml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const runSimulation = async () => {
@@ -416,6 +452,12 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
               manualWindDirection={manualWindDirection}
             />
 
+            {/* Höhenprofil direkt unter der Karte */}
+            <ElevationProfileChart 
+              waypoints={waypoints} 
+              elevationSettings={elevationSettings}
+            />
+
             <div className="section-spacing">
               <Space className="space-margin-bottom">
                 <Button
@@ -499,16 +541,28 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
         <Divider />
 
         <div className="text-center">
-          <Button
-            type="primary"
-            size="large"
-            icon={<PlayCircleOutlined />}
-            onClick={runSimulation}
-            loading={loading}
-            disabled={!vehicleConfig || waypoints.length < 2}
-          >
-            {loading ? 'Simulation läuft...' : 'Simulation starten'}
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlayCircleOutlined />}
+              onClick={runSimulation}
+              loading={loading}
+              disabled={!vehicleConfig || waypoints.length < 2}
+            >
+              {loading ? 'Simulation läuft...' : 'Simulation starten'}
+            </Button>
+            
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={exportKML}
+              disabled={waypoints.length < 2}
+              size="large"
+              title="KML für Google Earth/Maps exportieren"
+            >
+              KML Export
+            </Button>
+          </Space>
           
           {waypoints.length < 2 && (
             <div style={{ marginTop: 8 }}>

@@ -1,0 +1,43 @@
+diff --git a/backend/main.py b/backend/main.py
+index 65840c0..dd3723b 100644
+--- a/backend/main.py
++++ b/backend/main.py
+@@ -34,8 +34,8 @@ from services.energy_calculator import EnergyCalculator
+ from services.wind_service import WindService
+ from services.session_service import SessionService
+ from services.auth_service import get_current_active_user, get_db
+-from routes.auth_routes import router as auth_router
+-from routes.group_routes import router as group_router
++# TEMPORARILY: All endpoints in main.py to avoid import issues
++# from routes.simulation_routes import router as simulation_router
+ 
+ # Load environment variables
+ load_dotenv()
+@@ -50,8 +50,8 @@ app = FastAPI(
+ )
+ 
+ # Include routers
+-app.include_router(auth_router)
+-app.include_router(group_router)
++# All endpoints are now directly in main.py
++# No external routers needed
+ 
+ # CORS middleware
+ app.add_middleware(
+@@ -79,9 +79,13 @@ session_service = SessionService()
+ async def root():
+     return {"message": "Flight Energy Simulation API", "version": "1.0.0"}
+ 
+-@app.get("/api/vehicles", response_model=List[dict])
+-async def get_vehicles():
+-    """Verfügbare Fahrzeugtypen abrufen"""
++@app.get("/health")  
++async def health():
++    return {"status": "ok", "mode": "clean_version"}
++
++@app.get("/api/simulation/vehicle-types")
++async def get_vehicle_types():
++    """Get available vehicle types"""
+     return [
+         {
+             "type": "multirotor",
