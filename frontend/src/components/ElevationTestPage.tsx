@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from 'antd';
+import { ElevationSettings } from '../types/simulation';
 
 const ElevationTestPage: React.FC = () => {
   // Test waypoints
@@ -8,13 +9,12 @@ const ElevationTestPage: React.FC = () => {
     { latitude: 52.05, longitude: 8.650, altitude: 120 }
   ];
 
-  const testSettings = {
-    enabled: true,
-    interpolation_distance_m: 50,
+    const [elevationSettings, setElevationSettings] = useState<ElevationSettings>({
+    opentopo_server: '192.168.71.250:5000',
+    dataset: 'eudem25m', 
     safety_margin_m: 30,
-    opentopo_server: "192.168.71.250:5000",
-    dataset: "eudem25m"
-  };
+    interpolation_distance_m: 50
+  });
 
   return (
     <div style={{ padding: '24px' }}>

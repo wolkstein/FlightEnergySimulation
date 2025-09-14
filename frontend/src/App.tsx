@@ -34,16 +34,16 @@ import ResultsDisplay from './components/ResultsDisplay';
 import SessionHistory from './components/SessionHistory';
 import AuthModal from './components/AuthModal';
 import UserGroups from './components/UserGroups';
-import { VehicleConfig, Waypoint, SimulationResult } from './types/simulation';
-import SettingsPage from './components/SettingsPage';
-import { SettingsService } from './services/settingsService';
+import { VehicleConfig, Waypoint, SimulationResult, ElevationSettings } from './types/simulation';
+// REMOVED: SettingsPage (ElevationSettings moved to simulation-level)
+// REMOVED: settingsApi (no longer needed for user-level elevation settings)
 import './App.css';
 import './mobile-override.css'; // Load mobile override CSS last
 
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
 
-type MenuKey = 'simulation' | 'results' | 'history' | 'groups' | 'settings';
+type MenuKey = 'simulation' | 'results' | 'history' | 'groups';  // REMOVED: 'settings'
 
 interface User {
   id: number;
@@ -53,13 +53,7 @@ interface User {
   created_at: string;
 }
 
-interface ElevationSettings {
-  enabled: boolean;
-  opentopo_server: string;
-  dataset: string;
-  safety_margin_m: number;
-  interpolation_distance_m: number;
-}
+// REMOVED: ElevationSettings interface (moved to simulation-specific settings)
 
 const App: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('simulation');
@@ -90,33 +84,15 @@ const App: React.FC = () => {
     flightDuration: 1.0
   });
 
-  // Elevation Settings State auf App-Level - User-Profil basiert
-  const [elevationSettings, setElevationSettings] = useState<ElevationSettings>({
-    enabled: false,
+  // Elevation Settings State auf App-Level - Simulation-spezifisch
+  const [persistentElevationSettings, setPersistentElevationSettings] = useState<ElevationSettings>({
     opentopo_server: '192.168.71.250:5000',
     dataset: 'eudem25m',
     safety_margin_m: 30,
     interpolation_distance_m: 50
   });
 
-  // Auto-Save Settings Handler
-  const handleElevationSettingsChange = async (newSettings: ElevationSettings) => {
-    setElevationSettings(newSettings);
-    
-    // Auto-Save wenn User angemeldet ist
-    if (token && user) {
-      try {
-        const success = await SettingsService.updateUserSettings(token, newSettings);
-        if (success) {
-          // Optional: Success message (zu häufig für jeden Klick)
-          // message.success('Settings saved automatically');
-        }
-      } catch (error) {
-        console.warn('Could not save settings:', error);
-        // Keine Error Message - Settings bleiben lokal persistent
-      }
-    }
-  };
+  // REMOVED: Auto-Save ElevationSettings useEffect (no longer user-specific)
 
   // Check for existing authentication on app load
   useEffect(() => {
@@ -155,14 +131,7 @@ const App: React.FC = () => {
     setToken(authToken);
     setUser(userData);
     
-    // Auto-Load User Settings nach Login
-    try {
-      const userSettings = await SettingsService.getUserSettings(authToken);
-      setElevationSettings(userSettings);
-    } catch (error) {
-      console.warn('Could not load user settings:', error);
-      // Fallback zu Default-Settings (bereits in State gesetzt)
-    }
+    // REMOVED: Auto-Load User Settings (elevation settings moved to simulation level)
   };
 
   const handleLogout = () => {
@@ -220,6 +189,8 @@ const App: React.FC = () => {
             setPersistentVehicleConfig={setPersistentVehicleConfig}
             persistentWaypoints={persistentWaypoints}
             setPersistentWaypoints={setPersistentWaypoints}
+            persistentElevationSettings={persistentElevationSettings}
+            setPersistentElevationSettings={setPersistentElevationSettings}
             persistentWindSettings={persistentWindSettings}
             setPersistentWindSettings={setPersistentWindSettings}
           />
@@ -238,14 +209,7 @@ const App: React.FC = () => {
         return <SessionHistory onRestoreSession={handleRestoreSession} />;
       case 'groups':
         return <UserGroups user={user} token={token} />;
-      case 'settings':
-        return (
-          <SettingsPage 
-            elevationSettings={elevationSettings}
-            onElevationSettingsChange={handleElevationSettingsChange}
-            isLoggedIn={!!user}
-          />
-        );
+      // REMOVED: settings case (ElevationSettings moved to simulation-specific settings)
       default:
         return null;
     }
@@ -306,11 +270,7 @@ const App: React.FC = () => {
               label: 'Gruppen',
               disabled: !user, // Only available when logged in
             },
-            {
-              key: 'settings',
-              icon: <SettingOutlined />,
-              label: 'Einstellungen',
-            },
+            // REMOVED: settings menu item (ElevationSettings moved to simulation-specific settings)
           ]}
         />
       </Sider>
@@ -341,7 +301,7 @@ const App: React.FC = () => {
             {selectedMenu === 'results' && 'Simulationsergebnisse'}
             {selectedMenu === 'history' && 'Simulation Verlauf'}
             {selectedMenu === 'groups' && 'Benutzergruppen'}
-            {selectedMenu === 'settings' && 'Einstellungen'}
+            {/* REMOVED: settings title */}
           </Title>
           
           {/* Authentication UI */}

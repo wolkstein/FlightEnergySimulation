@@ -34,9 +34,8 @@ from services.energy_calculator import EnergyCalculator
 from services.wind_service import WindService
 from services.session_service import SessionService
 from services.auth_service import get_current_active_user, get_db
-from routes.auth_routes import router as auth_router
-from routes.group_routes import router as group_router
-from routes.elevation_routes import router as elevation_router
+from routes import auth_routes, group_routes
+# REMOVED: elevation_routes (moved to simulation-specific settings)
 
 # Load environment variables
 load_dotenv()
@@ -51,9 +50,9 @@ app = FastAPI(
 )
 
 # Include routers
-app.include_router(auth_router)
-app.include_router(group_router)
-app.include_router(elevation_router)
+app.include_router(auth_routes.router)
+app.include_router(group_routes.router)
+# REMOVED: app.include_router(elevation_routes.router) - moved to simulation-specific settings
 
 # CORS middleware
 app.add_middleware(

@@ -8,7 +8,7 @@ const { Text } = Typography;
 
 interface ElevationProfileChartProps {
   waypoints: Waypoint[];
-  elevationSettings?: ElevationSettings; // User-Settings für OpenTopo Integration
+  elevationSettings?: ElevationSettings; // Uses the updated interface
 }
 
 interface ElevationPoint {
@@ -35,8 +35,11 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
   const [totalDistance, setTotalDistance] = useState(0);
   const [useAGL, setUseAGL] = useState(false); // AGL vs AMSL toggle
   const [startpointTerrainHeight, setStartpointTerrainHeight] = useState<number | null>(null);
-  const [interpolationResolution, setInterpolationResolution] = useState(100); // Meter zwischen Interpolationspunkten
+  // REMOVED: interpolationResolution - use elevationSettings.interpolation_distance_m instead
   const [zoomDomain, setZoomDomain] = useState<{startIndex?: number, endIndex?: number} | null>(null);
+
+  // Get interpolation resolution from settings
+  const interpolationResolution = elevationSettings?.interpolation_distance_m || 50;
 
   // Haversine-Formel für Geo-Distanz-Berechnung
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -295,6 +298,14 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
       return;
     }
 
+    // Use elevationSettings directly or defaults
+    const effectiveSettings = elevationSettings || {
+      opentopo_server: '192.168.71.250:5000',
+      dataset: 'eudem25m',
+      safety_margin_m: 30,
+      interpolation_distance_m: 50
+    };
+
     setLoading(true);
     setError(null);
     setProgress(5);
@@ -310,7 +321,7 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
       const elevationPromises = interpolatedRoute.map(async (point, index) => {
         try {
           const response = await fetch(
-            `http://${openTopoServer}/v1/${dataset}?locations=${point.lat},${point.lon}`
+            `http://${effectiveSettings.opentopo_server}/v1/${effectiveSettings.dataset}?locations=${point.lat},${point.lon}`
           );
           
           if (!response.ok) {
@@ -360,7 +371,7 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
           flight_altitude: adjustedAltitude,
           terrain_elevation: terrainElevation,
           clearance: clearance,
-          safety_clearance_line: terrainElevation + safetyMargin, // User-definierte Safety Clearance
+          safety_clearance_line: terrainElevation + effectiveSettings.safety_margin_m, // User-definierte Safety Clearance
           waypoint_index: point.waypointIndex || -1,
           latitude: point.lat,
           longitude: point.lon
@@ -504,19 +515,9 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
                   <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
                     ({waypoints.length} WP)
                   </Text>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Text style={{ whiteSpace: 'nowrap' }}>Auflösung:</Text>
-                    <InputNumber
-                      size="small"
-                      min={10}
-                      max={500}
-                      step={10}
-                      value={interpolationResolution}
-                      onChange={(value) => setInterpolationResolution(value || 100)}
-                      addonAfter="m"
-                      style={{ width: 80 }}
-                    />
-                  </div>
+                  <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
+                    Auflösung: {interpolationResolution}m
+                  </Text>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Text style={{ whiteSpace: 'nowrap' }}>Modus:</Text>
                     <Switch
@@ -705,7 +706,7 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
                       stroke="#faad14" 
                       strokeWidth={2}
                       strokeDasharray="5 5" 
-                      name={`${safetyMargin}m Safety Clearance`}
+                      name={`${elevationSettings?.safety_margin_m || 30}m Safety Clearance`}
                       dot={false}
                     />
                   )}
@@ -744,3 +745,5 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
 };
 
 export default ElevationProfileChart;
+
+// ...existing elevation profile chart code...

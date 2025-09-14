@@ -37,12 +37,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # User Settings JSON column - REACTIVATED for elevation settings
-    elevation_settings = Column(JSON, default=lambda: {
-        "opentopo_server": "192.168.71.250:5000",
-        "dataset": "eudem25m", 
-        "safety_margin_m": 30
-    })
+    # User Settings JSON column - REMOVED: elevation_settings moved to simulation sessions
     last_login = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
@@ -108,13 +103,4 @@ class TokenResponse(BaseModel):
     token_type: str
     user: UserResponse
 
-# Elevation Settings Models
-class ElevationSettings(BaseModel):
-    opentopo_server: str = "192.168.71.250:5000"
-    dataset: str = "eudem25m"
-    safety_margin_m: int = 30
-
-class ElevationSettingsUpdate(BaseModel):
-    opentopo_server: Optional[str] = None
-    dataset: Optional[str] = None
-    safety_margin_m: Optional[int] = None
+# Elevation Settings Models - REMOVED: Now part of simulation sessions instead of user settings

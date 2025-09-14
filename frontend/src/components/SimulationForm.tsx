@@ -13,6 +13,7 @@ import {
   message,
   Space,
   Tabs,
+  Input,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, PlayCircleOutlined, ImportOutlined, CalculatorOutlined, SettingOutlined, DownloadOutlined } from '@ant-design/icons';
 import WaypointMap from './WaypointMap';
@@ -35,8 +36,9 @@ interface SimulationFormProps {
   setPersistentVehicleConfig: (config: VehicleConfig | null) => void;
   persistentWaypoints: Waypoint[];
   setPersistentWaypoints: (waypoints: Waypoint[]) => void;
-  // Elevation Settings für OpenTopo Integration
-  elevationSettings?: ElevationSettings;
+  // Elevation Settings als Props für State-Persistierung (simulation-specific)
+  persistentElevationSettings: ElevationSettings;
+  setPersistentElevationSettings: Dispatch<SetStateAction<ElevationSettings>>;
   // Wind-Settings als Props für State-Persistierung
   persistentWindSettings: {
     windConsideration: boolean;
@@ -67,7 +69,8 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   setPersistentVehicleConfig,
   persistentWaypoints,
   setPersistentWaypoints,
-  elevationSettings,
+  persistentElevationSettings,
+  setPersistentElevationSettings,
   persistentWindSettings,
   setPersistentWindSettings,
 }) => {
@@ -88,15 +91,30 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
   const missionStartTime = persistentWindSettings.missionStartTime;
   const flightDuration = persistentWindSettings.flightDuration;
   
+  // Elevation Settings aus persistenten Props verwenden (simulation-specific)
+  const elevationSettings = persistentElevationSettings;
+  
   // Helper-Funktionen für Wind-Settings Updates mit funktionalem State-Update
   const updateWindSetting = (key: keyof typeof persistentWindSettings, value: any) => {
-    console.log(`DEBUG: Updating ${key} to ${value}`); // Debug-Log
+    console.log(`DEBUG: Updating ${String(key)} to ${value}`); // Debug-Log
     // Verwende funktionales Update um sicherzustellen, dass wir den aktuellsten State bekommen
     setPersistentWindSettings(currentSettings => {
-      console.log(`DEBUG: Current settings for ${key}:`, currentSettings[key], '-> New value:', value);
+      console.log(`DEBUG: Current settings for ${String(key)}:`, currentSettings[key], '-> New value:', value);
       const newSettings = { ...currentSettings };
       (newSettings as any)[key] = value;
       console.log(`DEBUG: New settings:`, newSettings);
+      return newSettings;
+    });
+  };
+  
+  // Helper-Funktion für Elevation Settings Updates (wie updateWindSetting)
+  const updateElevationSetting = (key: keyof ElevationSettings, value: any) => {
+    console.log(`DEBUG: Updating elevation ${String(key)} to ${value}`);
+    setPersistentElevationSettings(currentSettings => {
+      console.log(`DEBUG: Current elevation settings for ${String(key)}:`, currentSettings[key], '-> New value:', value);
+      const newSettings = { ...currentSettings };
+      (newSettings as any)[key] = value;
+      console.log(`DEBUG: New elevation settings:`, newSettings);
       return newSettings;
     });
   };
@@ -246,16 +264,16 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
 
     try {
       const request: SimulationRequest = {
-        vehicle_type: selectedVehicleType,
-        vehicle_config: vehicleConfig,
-        waypoints,
-        wind_consideration: windConsideration,
-        manual_wind_enabled: manualWindEnabled,
-        manual_wind_speed_ms: manualWindEnabled ? manualWindSpeed : undefined,
-        manual_wind_direction_deg: manualWindEnabled ? manualWindDirection : undefined,
-      };
-
-      const result = await apiService.runSimulation(request);
+        vehicle_config: persistentVehicleConfig,
+        waypoints: persistentWaypoints,
+        wind_settings: {
+          wind_consideration: persistentWindSettings.windConsideration,
+          manual_wind_enabled: persistentWindSettings.manualWindEnabled,
+          manual_wind_speed_ms: persistentWindSettings.manualWindSpeed,
+          manual_wind_direction_deg: persistentWindSettings.manualWindDirection,
+        },
+        elevation_settings: persistentElevationSettings,
+      };      const result = await apiService.runSimulation(request);
       onSimulationComplete(result);
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Unbekannter Fehler';
@@ -435,6 +453,61 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
                   )}
                 </>
               )}
+            </Space>
+            
+            <Divider />
+            
+            <Space direction="vertical" size="middle" className="space-full-width">
+              <Text strong>🏔️ Höhenprofil-Einstellungen</Text>
+              
+              <Space>
+                <Text>OpenTopo Server:</Text>
+                <Input 
+                  placeholder="z.B. 192.168.71.250:5000"
+                  value={elevationSettings.opentopo_server}
+                  onChange={(e) => updateElevationSetting('opentopo_server', e.target.value)}
+                  style={{ width: 200 }}
+                />
+              </Space>
+              
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Text>Dataset:</Text>
+                  <br />
+                  <Input 
+                    placeholder="eudem25m"
+                    value={elevationSettings.dataset}
+                    onChange={(e) => updateElevationSetting('dataset', e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Text>Sicherheitsabstand:</Text>
+                  <br />
+                  <InputNumber 
+                    placeholder="30"
+                    value={elevationSettings.safety_margin_m}
+                    onChange={(value) => updateElevationSetting('safety_margin_m', value || elevationSettings.safety_margin_m)}
+                    min={10}
+                    max={200}
+                    suffix="m AGL"
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Text>Interpolation:</Text>
+                  <br />
+                  <InputNumber 
+                    placeholder="50"
+                    value={elevationSettings.interpolation_distance_m}
+                    onChange={(value) => updateElevationSetting('interpolation_distance_m', value || elevationSettings.interpolation_distance_m)}
+                    min={10}
+                    max={500}
+                    suffix="m"
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+              </Row>
             </Space>
           </Col>
 

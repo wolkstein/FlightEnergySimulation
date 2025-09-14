@@ -39,6 +39,7 @@ class SimulationSession(Base):
     vehicle_config = Column(JSON)  # VehicleConfig als JSON
     waypoints = Column(JSON)       # Waypoint-Liste als JSON
     wind_settings = Column(JSON)   # Wind-Einstellungen als JSON
+    elevation_settings = Column(JSON)  # Elevation-Einstellungen als JSON (simulation-specific)
     simulation_result = Column(JSON)  # Vollständiges SimulationResult als JSON
     
     # Relation zu Flight Segments für detaillierte Abfrage

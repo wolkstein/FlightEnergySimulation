@@ -376,3 +376,28 @@ Nächstes: [siehe Development Goals]
 **Letzte Aktualisierung:** 27. August 2025  
 **Entwickler:** wolkstein  
 **Version:** 1.4 - Client-Side Password Hashing & User Authentication System
+
+## 🔥 HIGH PRIORITY
+
+### 🧹 Code Cleanup & Refactoring Branch
+**Status:** PLANNED - Next Major Task
+- **Goal:** Systematic cleanup of unused/dead code to improve maintainability
+- **Approach:** Create dedicated cleanup branch `cleanup/remove-unused-code`
+- **Tools to use:**
+  ```bash
+  npx unimported          # Find unused files
+  npx depcheck           # Find unused dependencies  
+  npx ts-unused-exports  # Find dead code/exports
+  ```
+- **Benefits:** Better overview, faster builds, easier maintenance, smaller bundles
+- **Priority:** Critical for project health and future development
+
+### 🏔️ ElevationSettings Implementation - COMPLETED ✅
+- **Status:** FUNCTIONAL (Session persistence stopped intentionally)
+- **What works:** 
+  - ✅ UI controls for elevation settings (OpenTopo server, dataset, safety margin, interpolation)
+  - ✅ Live updates in ElevationProfileChart
+  - ✅ Settings passed correctly to chart component
+  - ✅ Real-time interpolation resolution changes
+- **What's missing:** Session persistence (intentionally stopped - ROI too low)
+- **Decision:** Focus on core functionality first, cleanup before adding complex features

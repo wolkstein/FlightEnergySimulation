@@ -69,15 +69,19 @@ export interface VehicleInfo {
   default_params: VehicleConfig;
 }
 
-export interface SimulationRequest {
-  vehicle_type: VehicleType;
-  vehicle_config: VehicleConfig;
-  waypoints: Waypoint[];
+// Wind Settings Interface
+export interface WindSettings {
   wind_consideration: boolean;
-  // Manuelle Wind-Override für Feldtests
   manual_wind_enabled?: boolean;
   manual_wind_speed_ms?: number;
   manual_wind_direction_deg?: number;
+}
+
+export interface SimulationRequest {
+  vehicle_config: VehicleConfig;
+  waypoints: Waypoint[];
+  wind_settings: WindSettings;
+  elevation_settings?: ElevationSettings; // ADDED: Optional elevation settings for session persistence
 }
 
 export interface FlightSegment {
@@ -155,10 +159,12 @@ export interface RestoreSessionData {
   };
 }
 
+// Elevation Settings (simulation-specific, not user-specific)
 export interface ElevationSettings {
-  enabled: boolean;
   opentopo_server: string;
   dataset: string;
   safety_margin_m: number;
-  interpolation_distance_m: number;
+  interpolation_distance_m: number; // CRITICAL: Frontend uses this for elevation profile interpolation
 }
+
+// REMOVED: Legacy compatibility interface - no longer needed
