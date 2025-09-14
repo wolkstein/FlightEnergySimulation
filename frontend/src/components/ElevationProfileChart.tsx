@@ -497,135 +497,16 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
   };
 
   return (
-    <Card title="🏔️ Höhenprofil" style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 24 }}>
       {waypoints.length < 2 ? (
-        <Text type="secondary">
+        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
           Mindestens 2 Wegpunkte erforderlich für Höhenprofil-Analyse
-        </Text>
+        </div>
       ) : (
         <>
-          {/* AGL/AMSL Toggle und Status */}
-          <div style={{ marginBottom: 16 }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <Space wrap>
-                  <Text strong style={{ whiteSpace: 'nowrap' }}>
-                    📏 Strecke: {totalDistance.toFixed(2)}km
-                  </Text>
-                  <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
-                    ({waypoints.length} WP)
-                  </Text>
-                  <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
-                    Auflösung: {interpolationResolution}m
-                  </Text>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Text style={{ whiteSpace: 'nowrap' }}>Modus:</Text>
-                    <Switch
-                      checked={useAGL}
-                      onChange={(checked) => {
-                        setUseAGL(checked);
-                        // Chart sofort neu berechnen bei Modus-Wechsel
-                        if (waypoints.length >= 2) {
-                          const flightData = calculateFlightProfile(waypoints);
-                          // Terrain-Daten beibehalten falls vorhanden, aber nur AGL-Conversion wenn explizit gewählt
-                          if (elevationData.length > 0 && elevationData[0].terrain_elevation > 0) {
-                            // Terrain-Daten neu laden für korrekte AGL/AMSL-Berechnung
-                            loadElevationData();
-                          } else {
-                            setElevationData(flightData);
-                          }
-                        }
-                      }}
-                      checkedChildren="AGL"
-                      unCheckedChildren="AMSL"
-                    />
-                  </div>
-                </Space>
-                <Space wrap>
-                  {/* Zoom/Pan Controls */}
-                  <Button 
-                    icon={<ZoomOutOutlined />}
-                    onClick={() => setZoomDomain(null)}
-                    disabled={!zoomDomain}
-                    size="small"
-                    title="Zoom zurücksetzen"
-                  >
-                    Reset Zoom
-                  </Button>
-                  
-                  {elevationData.length > 0 && elevationData[0].terrain_elevation === 0 && (
-                    <Button type="primary" onClick={loadElevationData} loading={loading}>
-                      🌐 Terrain-Höhen laden
-                    </Button>
-                  )}
-                  {elevationData.length > 0 && elevationData[0].terrain_elevation > 0 && (
-                    <Text type="success">✅ Mit Terrain-Daten</Text>
-                  )}
-                </Space>
-              </div>
-              
-              {/* AGL Info */}
-              {useAGL && (
-                <div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    🔧 AGL-Modus: Höhen werden relativ zum Startpunkt-Terrain interpretiert
-                    {startpointTerrainHeight !== null && (
-                      <span> (Startpunkt: {startpointTerrainHeight.toFixed(1)}m AMSL)</span>
-                    )}
-                  </Text>
-                </div>
-              )}
-              {!useAGL && (
-                <div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    🌊 AMSL-Modus: Höhen werden als absolute Werte über Meeresspiegel verwendet (RTK GNSS Standard)
-                  </Text>
-                </div>
-              )}
-
-              {elevationData.length > 0 && elevationData[0].terrain_elevation > 0 && (
-                <div>
-                  <Text type="success">
-                    ✅ {elevationData.length} Terrain-Punkte geladen • 
-                    🏔️ {elevationData.filter(p => p.clearance < 30).length} Kollisions-Warnungen
-                  </Text>
-                  <Button 
-                    size="small" 
-                    onClick={() => {
-                      // Terrain-Daten zurücksetzen, aber Flughöhen-Chart behalten
-                      const flightData = calculateFlightProfile(waypoints);
-                      setElevationData(flightData);
-                    }}
-                    style={{ marginLeft: 16 }}
-                  >
-                    🗑️ Terrain zurücksetzen
-                  </Button>
-                </div>
-              )}
-            </Space>
-          </div>
-
-          {/* Progress Bar */}
-          {loading && progress > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <Progress percent={progress} size="small" />
-            </div>
-          )}
-
-          {/* Error Alert */}
-          {error && (
-            <Alert 
-              message={error} 
-              type="error" 
-              style={{ marginBottom: 16 }}
-              closable 
-              onClose={() => setError(null)}
-            />
-          )}
-
-          {/* Chart - zeigt sofort Flughöhen, Terrain optional */}
+          {/* Chart direkt ohne Card-Wrapper */}
           {elevationData.length > 0 && (
-            <div style={{ height: '400px', width: '100%' }}>
+            <div style={{ height: '400px', width: '100%', marginBottom: 16 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart 
                   data={elevationData} 
@@ -738,9 +619,128 @@ const ElevationProfileChart: React.FC<ElevationProfileChartProps> = ({ waypoints
               </ResponsiveContainer>
             </div>
           )}
+
+          {/* Progress Bar */}
+          {loading && progress > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <Progress percent={progress} size="small" />
+            </div>
+          )}
+
+          {/* Error Alert */}
+          {error && (
+            <Alert 
+              message={error} 
+              type="error" 
+              style={{ marginBottom: 16 }}
+              closable 
+              onClose={() => setError(null)}
+            />
+          )}
+
+          {/* Einstellungen und Controls UNTER dem Chart */}
+          <div style={{ backgroundColor: '#fafafa', padding: '16px', borderRadius: '6px', border: '1px solid #d9d9d9' }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <Space wrap>
+                  <Text strong style={{ whiteSpace: 'nowrap' }}>
+                    📏 Strecke: {totalDistance.toFixed(2)}km
+                  </Text>
+                  <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
+                    ({waypoints.length} WP)
+                  </Text>
+                  <Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
+                    Auflösung: {interpolationResolution}m
+                  </Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Text style={{ whiteSpace: 'nowrap' }}>Modus:</Text>
+                    <Switch
+                      checked={useAGL}
+                      onChange={(checked) => {
+                        setUseAGL(checked);
+                        // Chart sofort neu berechnen bei Modus-Wechsel
+                        if (waypoints.length >= 2) {
+                          const flightData = calculateFlightProfile(waypoints);
+                          // Terrain-Daten beibehalten falls vorhanden, aber nur AGL-Conversion wenn explizit gewählt
+                          if (elevationData.length > 0 && elevationData[0].terrain_elevation > 0) {
+                            // Terrain-Daten neu laden für korrekte AGL/AMSL-Berechnung
+                            loadElevationData();
+                          } else {
+                            setElevationData(flightData);
+                          }
+                        }
+                      }}
+                      checkedChildren="AGL"
+                      unCheckedChildren="AMSL"
+                    />
+                  </div>
+                </Space>
+                <Space wrap>
+                  {/* Zoom/Pan Controls */}
+                  <Button 
+                    icon={<ZoomOutOutlined />}
+                    onClick={() => setZoomDomain(null)}
+                    disabled={!zoomDomain}
+                    size="small"
+                    title="Zoom zurücksetzen"
+                  >
+                    Reset Zoom
+                  </Button>
+                  
+                  {elevationData.length > 0 && elevationData[0].terrain_elevation === 0 && (
+                    <Button type="primary" onClick={loadElevationData} loading={loading}>
+                      🌐 Terrain-Höhen laden
+                    </Button>
+                  )}
+                  {elevationData.length > 0 && elevationData[0].terrain_elevation > 0 && (
+                    <Text type="success">✅ Mit Terrain-Daten</Text>
+                  )}
+                </Space>
+              </div>
+              
+              {/* AGL Info */}
+              {useAGL && (
+                <div>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    🔧 AGL-Modus: Höhen werden relativ zum Startpunkt-Terrain interpretiert
+                    {startpointTerrainHeight !== null && (
+                      <span> (Startpunkt: {startpointTerrainHeight.toFixed(1)}m AMSL)</span>
+                    )}
+                  </Text>
+                </div>
+              )}
+              {!useAGL && (
+                <div>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    🌊 AMSL-Modus: Höhen werden als absolute Werte über Meeresspiegel verwendet (RTK GNSS Standard)
+                  </Text>
+                </div>
+              )}
+
+              {elevationData.length > 0 && elevationData[0].terrain_elevation > 0 && (
+                <div>
+                  <Text type="success">
+                    ✅ {elevationData.length} Terrain-Punkte geladen • 
+                    🏔️ {elevationData.filter(p => p.clearance < 30).length} Kollisions-Warnungen
+                  </Text>
+                  <Button 
+                    size="small" 
+                    onClick={() => {
+                      // Terrain-Daten zurücksetzen, aber Flughöhen-Chart behalten
+                      const flightData = calculateFlightProfile(waypoints);
+                      setElevationData(flightData);
+                    }}
+                    style={{ marginLeft: 16 }}
+                  >
+                    🗑️ Terrain zurücksetzen
+                  </Button>
+                </div>
+              )}
+            </Space>
+          </div>
         </>
       )}
-    </Card>
+    </div>
   );
 };
 
