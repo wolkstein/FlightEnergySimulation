@@ -80,7 +80,11 @@ export interface WindSettings {
 export interface SimulationRequest {
   vehicle_config: VehicleConfig;
   waypoints: Waypoint[];
-  wind_settings: WindSettings;
+  // Wind-Felder flach (wie Backend erwartet) statt wind_settings Objekt
+  wind_consideration: boolean;
+  manual_wind_enabled?: boolean;
+  manual_wind_speed_ms?: number;
+  manual_wind_direction_deg?: number;
   elevation_settings?: ElevationSettings; // ADDED: Optional elevation settings for session persistence
 }
 

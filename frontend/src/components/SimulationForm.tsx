@@ -266,12 +266,11 @@ const SimulationForm: React.FC<SimulationFormProps> = ({
       const request: SimulationRequest = {
         vehicle_config: persistentVehicleConfig,
         waypoints: persistentWaypoints,
-        wind_settings: {
-          wind_consideration: persistentWindSettings.windConsideration,
-          manual_wind_enabled: persistentWindSettings.manualWindEnabled,
-          manual_wind_speed_ms: persistentWindSettings.manualWindSpeed,
-          manual_wind_direction_deg: persistentWindSettings.manualWindDirection,
-        },
+        // Wind-Felder direkt ins Request-Objekt (wie Backend erwartet)
+        wind_consideration: persistentWindSettings.windConsideration,
+        manual_wind_enabled: persistentWindSettings.manualWindEnabled,
+        manual_wind_speed_ms: persistentWindSettings.manualWindSpeed,
+        manual_wind_direction_deg: persistentWindSettings.manualWindDirection,
         elevation_settings: persistentElevationSettings,
       };      const result = await apiService.runSimulation(request);
       onSimulationComplete(result);
