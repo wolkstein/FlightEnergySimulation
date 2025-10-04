@@ -24,6 +24,7 @@ export interface VehicleConfig {
   mass: number;
   max_power: number;
   hover_power?: number;
+  hover_power_per_kg?: number;  // W/kg für UI-Berechnungen
   cruise_power?: number;
   forward_thrust_power?: number;  // Neu: VTOL Vortriebsmotor
   stall_speed?: number;

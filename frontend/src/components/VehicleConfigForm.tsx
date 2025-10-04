@@ -21,6 +21,14 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
 
   const handleFieldChange = (field: keyof VehicleConfig, value: number | string) => {
     const newConfig = { ...config, [field]: value };
+    
+    // Automatische Berechnung von hover_power bei Änderung von mass oder hover_power_per_kg
+    if (field === 'mass' || field === 'hover_power_per_kg') {
+      const mass = field === 'mass' ? (value as number) : config.mass;
+      const powerPerKg = field === 'hover_power_per_kg' ? (value as number) : (config.hover_power_per_kg || 140);
+      newConfig.hover_power = Math.round(mass * powerPerKg);
+    }
+    
     onChange(newConfig);
   };
 
@@ -28,7 +36,8 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
   const infoTooltips = {
     mass: "Gesamtmasse des Fahrzeugs inkl. Batterie und Nutzlast. Typisch: Multirotor 1-30kg, VTOL 2-30kg, Plane 1-30kg",
     max_power: "Maximale elektrische Leistung aller Motoren zusammen. Typisch: Multirotor 500-40000W, VTOL 800-40000W, Plane 300-8000W",
-    hover_power: "Leistung zum Schweben (nur für Multirotor/VTOL). Typisch: 25-55% der Maximaleistung",
+    hover_power: "Leistung zum Schweben (nur für Multirotor/VTOL). Wird automatisch aus Masse × W/kg berechnet",
+    hover_power_per_kg: "Spezifische Schwebelleistung pro kg Masse. Typisch: Multirotor 120-200 W/kg, VTOL 140-180 W/kg",
     cruise_power: "Leistung im Reiseflug (für VTOL/Plane). Typisch: 20-40% der Maximaleistung",
     forward_thrust_power: "Leistung des Vortriebsmotors (nur für VTOL). Separat von Hover-Motoren. Typisch: 300-6000W",
     cruise_speed: "Normale Reisegeschwindigkeit für optimalen Energieverbrauch. Typisch: Multirotor 8-17m/s, VTOL 12-33m/s, Plane 15-35m/s",
@@ -106,18 +115,32 @@ const VehicleConfigForm: React.FC<VehicleConfigFormProps> = ({
         </Col>
 
         {(vehicleType === 'multirotor' || vehicleType === 'vtol') && (
-          <Col xs={24} sm={12}>
-            <Form.Item label={createInfoLabel("Schwebelleistung (W)", "hover_power")}>
-              <InputNumber
-                value={config.hover_power}
-                onChange={(value) => handleFieldChange('hover_power', value || 0)}
-                min={50}
-                max={10000}
-                step={25}
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-          </Col>
+          <>
+            <Col xs={24} sm={12}>
+              <Form.Item label={createInfoLabel("Schwebeflug (W/kg)", "hover_power_per_kg")}>
+                <InputNumber
+                  value={config.hover_power_per_kg}
+                  onChange={(value) => handleFieldChange('hover_power_per_kg', value || 140)}
+                  min={50}
+                  max={300}
+                  step={5}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item label={createInfoLabel("Schwebelleistung (W)", "hover_power")}>
+                <InputNumber
+                  value={config.hover_power}
+                  onChange={(value) => handleFieldChange('hover_power', value || 0)}
+                  min={50}
+                  max={10000}
+                  step={25}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+          </>
         )}
 
         {(vehicleType === 'vtol' || vehicleType === 'plane') && (

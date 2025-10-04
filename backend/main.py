@@ -101,7 +101,8 @@ async def get_vehicles():
                 "vehicle_type": "multirotor",
                 "mass": 25,  # kg
                 "max_power": 10000,  # W
-                "hover_power": 4250,  # W
+                "hover_power": 3500,  # W
+                "hover_power_per_kg": 140,  # W/kg (25kg × 140 = 3500W)
                 "cruise_speed": 15,  # m/s
                 "max_speed": 17.5,  # m/s
                 "max_climb_rate": 6,  # m/s
@@ -113,7 +114,7 @@ async def get_vehicles():
                 "frame_type": "quad",
                 "motor_config": "coaxial",  # Coaxial für bessere Leistung
                 "rotor_diameter": 0.7,  # m
-                "drag_coefficient": 0.03
+                "drag_coefficient": 0.43
             }
         },
         {
@@ -125,6 +126,7 @@ async def get_vehicles():
                 "mass": 5.0,  # kg
                 "max_power": 2000,  # W
                 "hover_power": 800,  # W
+                "hover_power_per_kg": 160,  # W/kg (5kg × 160 = 800W)
                 "cruise_power": 600,  # W
                 "forward_thrust_power": 500,  # W
                 "cruise_speed": 18,  # m/s

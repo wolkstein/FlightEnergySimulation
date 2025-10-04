@@ -31,6 +31,7 @@ class VehicleConfig(BaseModel):
     mass: float  # kg
     max_power: float  # W
     hover_power: Optional[float] = None  # W (für Multirotor/VTOL)
+    hover_power_per_kg: Optional[float] = 140.0  # W/kg (für UI-Berechnungen)
     cruise_power: Optional[float] = None  # W (für VTOL/Plane)
     forward_thrust_power: Optional[float] = None  # W (für VTOL Vortriebsmotor)
     stall_speed: Optional[float] = None  # m/s (für Plane)

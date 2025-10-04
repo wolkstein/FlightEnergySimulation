@@ -78,8 +78,8 @@ const SweetSpotAnalysis: React.FC<SweetSpotAnalysisProps> = ({
     
     // System efficiency chain: Motor × Propeller × ESC (angepasst für höhere Gesamtleistung)
     const motorEfficiency = 0.85;
-    const propellerEfficiency = 0.45; // Reduziert für realistischere Hover Power (~4000W)
-    const escEfficiency = 0.95;
+    const propellerEfficiency = 0.60; // Reduziert für realistischere Hover Power (~4000W)
+    const escEfficiency = 0.9;
     const systemEfficiency = motorEfficiency * propellerEfficiency * escEfficiency; // = 36.3%
     
     // Speed range for analysis (0 to 30 m/s)
@@ -103,7 +103,7 @@ const SweetSpotAnalysis: React.FC<SweetSpotAnalysisProps> = ({
           piRatio = 1 - 0.4 * mu - 0.1 * mu * mu;
         } else {
           // Standard Glauert: Pi/Pi0 = sqrt(1 + μ²) - μ 
-          piRatio = Math.sqrt(1 + mu * mu) - mu / 1.5;
+          piRatio = Math.sqrt(1 + mu * mu) - mu / 2.0;
         }
         
         const hoverInducedPowerIdeal = (hoverInducedPowerPerRotor * rotorCount) / coaxialEfficiency;
